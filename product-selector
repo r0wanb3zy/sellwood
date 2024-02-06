@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Product Selector</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 0;
+    }
+
+    h1 {
+      font-size: 22px;
+      margin-top: 0;
+      background-color: WhiteSmoke;
+      padding: 5px;
+    }
+
+    .application label {
+      display: inline-block;
+      margin-right: 5px;
+      margin-bottom: 10px;
+    }
+
+    .application input[type="radio"] {
+      appearance: none;
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #999;
+      transition: 0.2s all linear;
+      margin-right: 5px;
+      position: relative;
+      top: 3px;
+    }
+
+    .application input[type="radio"]:checked {
+      border: 5px solid #ED1C24;
+    }
+
+    .radio-group {
+      display: inline-block;
+    }
+
+    input[type="text"] {
+      width: 80px;
+      padding: 4px 5px 4px 5px;
+      margin-bottom: 12px;
+      margin-left: 8px;
+      border: 2px solid #999;
+      border-radius: 4px;
+      outline: none;
+      color: #ED1C24;
+      font-weight: bold;
+    }
+
+    input[type="text"]::placeholder {
+      color: black;
+      font-weight: normal;
+    }
+
+    input[type="text"]:focus {
+      border-color: #ED1C24;
+    }
+
+    .result {
+      margin-top: 20px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    button {
+      display: block;
+      width: 100%;
+      padding: 10px 20px;
+      background-color: #ED1C24;
+      border: 1px solid #ED1C24;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      transition-duration: 0.5s;
+      font-family: Arial, sans-serif;
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    button:hover {
+      background-color: #fff;
+      color: #ED1C24;
+    }
+
+    .container_ladders {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .column_ladders {
+      position: relative;
+      text-align: center;
+      max-width: 200px;
+      width: 100%;
+      background-color: WhiteSmoke;
+      box-sizing: border-box;
+      margin: 5px;
+    }
+
+    .column_ladders img {
+      position: relative;
+      max-width: 100%;
+      height: auto;
+      margin-bottom: 6px;
+      z-index: 0;
+    }
+
+    .column_ladders h2 {
+      font-family: Arial, sans-serif;
+      font-size: 18px;
+      margin-bottom: -5px;
+    }
+
+    .column_ladders p {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .column_ladders div {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      line-height: 1.5;
+      color: red;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    hr.line {
+      border-top: 1.5px solid red;
+      margin-left: 15px;
+      margin-right: 15px;
+    }
+
+    .button_ladders {
+      display: inline-block;
+      padding: 10px 20px;
+      background-color: #ED1C24;
+      border: 1px solid #ED1C24;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      transition-duration: 0.5s;
+      font-family: Arial, sans-serif;
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    .button_ladders:hover {
+      background-color: #fff;
+      color: #ED1C24;
+    }
+
+    .contact {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      line-height: 1.5;
+      font-weight: normal;
+    }
+
+    @keyframes fade-in {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .result {
+      margin-top: 20px;
+      font-weight: bold;
+      text-align: center;
+      opacity: 0;
+      animation: fade-in 1.5s ease forwards;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="application">
+      <label for="residential">What is your Application?</label>
+      <div class="radio-group">
+        <input type="radio" name="application" id="residential" value="Residential" checked>
+        <label for="residential">Residential</label>
+        <input type="radio" name="application" id="commercial" value="Commercial">
+        <label for="commercial">Commercial</label>
+      </div>
+    </div>
+    <label for="stud-height">What is your ceiling height (mm)?</label>
+    <input type="text" id="stud-height" placeholder="Enter Height" onkeydown="handleKeyDown(event)">
+    <button onclick="chooseLadder()">Select</button>
+    <div class="result" id="result"></div>
+  </div>
+  <script>
+    function chooseLadder() {
+      const application = document.querySelector('input[name="application"]:checked').value;
+      const studHeight = parseInt(document.getElementById('stud-height').value);
+      let result;
+      if (application === 'Residential') {
+        if (studHeight >= 2250 && studHeight <= 2440) {
+          result = `<div class="container_ladders">
+         <div class="column_ladders" data-price="$699">
+             <img src="images/P30.png" alt="Image 1">
+             <a href="https://www.sellwood.co.nz/product/premier-range/p30-attic-ladder" target="_blank" class="button_ladders">Premier P30</a>
+             <div class="height">Ceiling Heights: 2250 - 3050<br>Opening Required: 1300 x 600</div>
+             <hr class="line">
+         </div>
+         <div class="column_ladders" data-price="$1499">
+             <img src="images/D28.png" alt="Image 1">
+             <a href="https://www.sellwood.co.nz/product/deluxe-range/d28-attic-ladder" target="_blank" class="button_ladders">Deluxe D28</a>
+             <div class="height">Ceiling Heights: 2250 - 2800<br>Opening Required: 1400 x 650</div>
+             <hr class="line">
+             <p>• Gentle Angle & Deeper Treads<br>• Easier to Climb<br>• Wider ladder<br>• Bigger opening</p>
+         </div>
+         <div class="column_ladders" data-price="$899">
+             <img src="images/Q24.png" alt="Image 1">
+             <a href="https://www.sellwood.co.nz/product/premier-range/q24-attic-ladder" target="_blank" class="button_ladders">Truss Q24</a>
+             <div class="height">Ceiling Heights: 2250 - 2440<br>Opening Required: 835 x 650</div>
+             <hr class="line">
+      <p>• Smaller Opening<br>• Fits Between Trusses in Hall</p>
+         </div>
+         </div>`;
+        } else if (studHeight >= 2441 && studHeight <= 2800) {
+          result = `<div class="container_ladders">
+         <div class="column_ladders" data-price="$699">
+             <img src="images/P30.png" alt="Image 1">
+             <a href="https://www.sellwood.co.nz/product/premier-range/p30-attic-ladder" target="_blank" class="button_ladders">Premier P30</a>
+             <div class="height">Ceiling Heights: 2250 - 3050<br>Opening Required: 1300 x 600</div>
+             <hr class="line">
+         </div>
+         <div class="column_ladders" data-price="$1499">
+             <img src="images/D28.png" alt="Image 1">
+             <a href="https://www.sellwood.co.nz/product/deluxe-range/d28-attic-ladder" target="_blank" class="button_ladders">Deluxe D28</a>
+             <div class="height">Ceiling Heights: 2250 - 2800<br>Opening Required: 1400 x 650</div>
+             <hr class="line">
+             <p>• Gentle Angle & Deeper Treads<br>• Easier to Climb<br>• Wider ladder<br>• Bigger opening</p>
+         </div>
+         </div>`;
+        } else if (studHeight >= 2801 && studHeight <= 3050) {
+          result = `<div class="container_ladders">
+         <div class="column_ladders" data-price="$699">
+             <img src="images/P30.png" alt="Image 1">
+             <a href="https://www.sellwood.co.nz/product/premier-range/p30-attic-ladder" target="_blank" class="button_ladders">Premier P30</a>
+             <div class="height">Ceiling Heights: 2250 - 3050<br>Opening Required: 1300 x 600</div>
+             <hr class="line">
+         </div>
+         <div class="column_ladders" data-price="$1799">
+             <img src="images/D30.png" alt="Image 1">
+             <a href="https://www.sellwood.co.nz/product/deluxe-range/d30-attic-ladder" target="_blank" class="button_ladders">Deluxe D30</a>
+             <div class="height">Ceiling Heights: 2800 - 3100<br>Opening Required: 1450 x 650</div>
+             <hr class="line">
+             <p>• Gentle Angle & Deeper Treads<br>• Easier to Climb<br>• Wider ladder<br>• Bigger opening</p>
+         </div>
+         </div>`;
+        } else if (studHeight >= 3051 && studHeight <= 3100) {
+          result = `<div class="container_ladders">
+         <div class="column_ladders" data-price="$1599">
+             <img src="images/P36.png" alt="Image 1">
+             <a href="https://www.sellwood.co.nz/product/premier-range/p36-attic-ladder" target="_blank" class="button_ladders">Premier P36</a>
+             <div class="height">Ceiling Heights: 3050 - 3660<br>Opening Required: 1300 x 600</div>
+             <hr class="line">
+         </div>
+         <div class="column_ladders" data-price="$1799">
+             <img src="images/D30.png" alt="Image 1">
+             <a href="https://www.sellwood.co.nz/product/deluxe-range/d30-attic-ladder" target="_blank" class="button_ladders">Deluxe D30</a>
+             <div class="height">Ceiling Heights: 2800 - 3100<br>Opening Required: 1450 x 650</div>
+             <hr class="line">
+             <p>• Gentle Angle & Deeper Treads<br>• Easier to Climb<br>• Wider ladder<br>• Bigger opening</p>
+         </div>
+         </div>`;
+        } else if (studHeight >= 3101 && studHeight <= 3660) {
+          result = `<div class="container_ladders">
+         <div class="column_ladders" data-price="$1599">
+             <img src="images/P36.png" alt="Image 1">
+             <a href="https://www.sellwood.co.nz/product/premier-range/p36-attic-ladder" target="_blank" class="button_ladders">Premier P36</a>
+             <div class="height">Ceiling Heights: 3050 - 3660<br>Opening Required: 1300 x 600</div>
+             <hr class="line">
+         </div>
+         <div class="column_ladders" data-price="$2199">
+             <img src="images/D36.png" alt="Image 1">
+             <a href="https://www.sellwood.co.nz/product/deluxe-range/d36-attic-ladder" target="_blank" class="button_ladders">Deluxe D36</a>
+             <div class="height">Ceiling Heights: 3100 - 3660<br>Opening Required: 1450 x 650</div>
+             <hr class="line">
+             <p>• Gentle Angle & Deeper Treads<br>• Easier to Climb<br>• Wider ladder<br>• Bigger opening</p>
+         </div>
+         </div>`;
+        } else {
+          // ladder options for stud heights outside the specified range
+          result = `<div class="contact"><p><strong>No suitable standard ladders for the given height.<br><br>Please contact us further for advice.</strong></p></div>
+          <div><a href="https://www.sellwood.co.nz/contact-us" target="_blank" class="button_ladders">Contact us</a></div>`;
+        }
+      } else if (application === 'Commercial') {
+        if (studHeight >= 2300 && studHeight <= 2450) {
+          result = `<div class="container_ladders">
+         <div class="column_ladders" data-price="$2199">
+             <img src="images/A25.png" alt="Image 1">
+             <a href="https://www.sellwood.co.nz/product/commercial-range/A25-attic-ladder" target="_blank" class="button_ladders">Commercial A25</a>
+             <div class="height">Ceiling Heights: 2300 - 2450<br>Opening Required: 1400 x 650</div>
+             <hr class="line">
+        <p>• Heavy Duty Alumninium</p>
+         </div>
+         </div>`;
+        } else if (studHeight >= 2550 && studHeight <= 2700) {
+          result = `<div class="container_ladders">
+         <div class="column_ladders" data-price="$2299">
+             <img src="images/A28.png" alt="Image 1">
+             <a href="https://www.sellwood.co.nz/product/commercial-range/A28-attic-ladder" target="_blank" class="button_ladders">Commercial A28</a>
+             <div class="height">Ceiling Heights: 2550 - 2700<br>Opening Required: 1400 x 650</div>
+             <hr class="line">
+        <p>• Heavy Duty Alumninium</p>
+         </div>
+         </div>`;
+        } else if (studHeight >= 2701 && studHeight <= 3660) {
+          result = `<div class="container_ladders">
+         <div class="column_ladders" data-price="$3499">
+             <img src="images/A36.png" alt="Image 1">
+             <a href="https://www.sellwood.co.nz/product/commercial-range/A36-attic-ladder" target="_blank" class="button_ladders">Commercial A36</a>
+             <div class="height">Ceiling Heights: 2700 - 3660<br>Opening Required: 1400 x 650</div>
+             <hr class="line">
+        <p>• Heavy Duty Alumninium</p>
+         </div>
+         </div>`;
+        } else {
+          // ladder options for stud heights outside the specified range
+          result = `<div class="contact"><p><strong>No suitable standard ladders for the given height.<br><br>Please contact us further for advice.</strong></p></div>
+          <div><a href="https://www.sellwood.co.nz/contact-us" target="_blank" class="button_ladders">Contact us</a></div>`;
+        }
+      }
+      const resultElement = document.getElementById('result');
+      const container = resultElement.parentNode;
+      // Remove result element
+      container.removeChild(resultElement);
+      if (result) {
+        // Create a new result element
+        const newResultElement = document.createElement('div');
+        newResultElement.setAttribute('class', 'result');
+        newResultElement.setAttribute('id', 'result');
+        newResultElement.innerHTML = result;
+        container.appendChild(newResultElement);
+      } else {
+        resultElement.innerHTML = 'No ladder found for the provided criteria.';
+      }
+    }
+
+    function handleKeyDown(event) {
+      if (event.key === 'Enter') {
+        chooseLadder();
+      }
+    }
+  </script>
+</body>
+
+</html>
