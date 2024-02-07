@@ -5,110 +5,116 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
       padding: 10px;
-      line-height: 1.5;
+      background-color: #f4f4f4;
     }
 
-    #output {
-      padding: 10px;
+    #container {
+      max-width: 400px;
+      margin: 0 auto;
       background-color: #fff;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 14px;
-      text-align: center;
-      line-height: 1.5;
-      margin-top: 10px;
-    }
-
-    label {
-      font-weight: normal;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
     }
 
     input[type="text"] {
-      width: calc(100% - 10px);
-      padding: 2px 4px;
-      margin-top: 5px;
-      border: 2px solid #999;
-      border-radius: 4px;
-      color: #ED1C24;
-      font-weight: bold;
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      border: 2px solid #ddd;
+      border-radius: 5px;
+      font-size: 16px;
       box-sizing: border-box;
     }
 
     input[type="radio"] {
       appearance: none;
-      border-radius: 50%;
-      width: 15px;
-      height: 15px;
-      border: 2px solid #999;
-      transition: 0.2s all linear;
-      position: relative;
-      top: 2px;
+      width: 20px;
+      height: 20px;
       margin-right: 5px;
+      position: relative;
+      top: 6px;
+      border: 2px solid #ddd;
+      border-radius: 50%;
+      outline: none;
+      cursor: pointer;
     }
 
     input[type="radio"]:checked {
-      border: 5px solid #ED1C24;
+      background-color: #ED1C24;
+      border-color: #ED1C24;
+    }
+
+    label {
+      font-size: 16px;
+      margin-left: 5px;
     }
 
     button {
-      display: block;
-      width: calc(100% - 10px);
-      padding: 10px;
+      width: 100%;
+      padding: 12px;
       background-color: #ED1C24;
-      border: 1px solid #ED1C24;
+      border: none;
+      border-radius: 5px;
       color: white;
-      text-decoration: none;
-      border-radius: 4px;
-      transition-duration: 0.5s;
-      font-family: Arial, sans-serif;
-      font-weight: bold;
       font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s;
       margin-top: 10px;
     }
 
     button:hover {
-      background-color: #fff;
-      color: #ED1C24;
+      background-color: #c70014;
     }
 
-    button:active {
-      background-color: #3e8e41;
+    #output {
+      margin-top: 20px;
+      background-color: #f9f9f9;
+      padding: 20px;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+
+    #printButton {
+      display: none;
     }
   </style>
 
 </head>
 
 <body>
-  <div>
+  <div id="container">
     <label for="customerInput">Job name:</label>
-    <input type="text" id="customerInput" placeholder="">
-  </div>
-  <div>
+    <input type="text" id="customerInput" placeholder="Enter job name">
+
     <label for="ladderHeightInput">Ladder height (mm):</label>
-    <input type="text" id="ladderHeightInput" placeholder="">
-  </div>
-  <div class="application">
-    <label>Ladder type:</label>
-    <input type="radio" id="ladderTypeFixed" name="ladderType" value="f" checked>
-    <label for="ladderTypeFixed">Fixed</label>
-    <input type="radio" id="ladderTypePivotal" name="ladderType" value="p">
-    <label for="ladderTypePivotal">Pivotal</label>
-  </div>
-  <div class="application">
-    <label>Handrails obstructed:</label>
-    <input type="radio" id="handrailsObstructedYes" name="handrailsObstructed" value="y" checked>
-    <label for="handrailsObstructedYes">Yes</label>
-    <input type="radio" id="handrailsObstructedNo" name="handrailsObstructed" value="n">
-    <label for="handrailsObstructedNo">No</label>
-  </div>
-  <div>
+    <input type="text" id="ladderHeightInput" placeholder="Enter ladder height">
+
+    <div>
+      <label>Ladder type:</label>
+      <input type="radio" id="ladderTypeFixed" name="ladderType" value="f" checked>
+      <label for="ladderTypeFixed">Fixed</label>
+      <input type="radio" id="ladderTypePivotal" name="ladderType" value="p">
+      <label for="ladderTypePivotal">Pivotal</label>
+    </div>
+
+    <div>
+      <label>Handrails obstructed:</label>
+      <input type="radio" id="handrailsObstructedYes" name="handrailsObstructed" value="y" checked>
+      <label for="handrailsObstructedYes">Yes</label>
+      <input type="radio" id="handrailsObstructedNo" name="handrailsObstructed" value="n">
+      <label for="handrailsObstructedNo">No</label>
+    </div>
+
     <button onclick="calculate()">Start</button>
+
+    <div id="output"></div>
+    <button id="printButton" onclick="printOutput()">Print</button>
   </div>
-  <div id="output"></div>
-  <button id="printButton" onclick="printOutput()" class="hidden">Print</button>
 
   <script>
     var ladderType;
@@ -125,15 +131,15 @@
       var printButton = document.getElementById("printButton");
       if (customer === '') {
         alert('Please enter job name.');
-        printButton.classList.add("hidden"); // Hide the print button
+        printButton.style.display = "none"; // Hide the print button
         return;
       }
       if (ladderHeight === '') {
         alert('Please enter ladder height.');
-        printButton.classList.add("hidden"); // Hide the print button
+        printButton.style.display = "none"; // Hide the print button
         return;
       }
-      printButton.classList.remove("hidden"); // Show the print button
+      printButton.style.display = "block"; // Show the print button
       ladderType = document.querySelector('input[name="ladderType"]:checked').value;
       ladderHeight = parseFloat(ladderHeight);
       if ((ladderType.toLowerCase() !== 'f' && ladderType.toLowerCase() !== 'p') || isNaN(ladderHeight)) {
@@ -270,13 +276,6 @@
     Math.radians = function(degrees) {
       return degrees * Math.PI / 180;
     };
-    // Add event listener to the input fields to detect Enter key press
-    document.getElementById("ladderHeightInput").addEventListener("keyup", function(event) {
-      event.preventDefault();
-      if (event.keyCode === 13) {
-        calculate();
-      }
-    });
     // Function to print the output
     function printOutput() {
       var ladderTypeText;
