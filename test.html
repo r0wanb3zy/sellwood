@@ -295,6 +295,16 @@
       printWindow.document.close();
       printWindow.print();
     }
+// Function to handle key press events
+function handleKeyPress(event) {
+  if (event.keyCode === 13) { // Check if the pressed key is Enter (key code 13)
+    calculate(); // Call the calculate function
+  }
+}
+
+// Add event listener to the input fields to listen for key press events
+document.getElementById("customerInput").addEventListener("keypress", handleKeyPress);
+document.getElementById("ladderHeightInput").addEventListener("keypress", handleKeyPress);
   </script>
 </body>
 
