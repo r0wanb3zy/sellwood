@@ -11,7 +11,7 @@
     }
 
     #container {
-      max-width: 250px;
+      max-width: 300px;
       margin: 0 auto;
       background-color: #fff;
       border-radius: 8px;
@@ -160,7 +160,7 @@
       outputDiv.innerHTML = ''; // Clear the previous output
       displayOutput('Timestamp: ' + getCurrentTimestamp());
       displayOutput('Job name: ' + customer); // Display customer name
-      displayOutput('--------------------------------');
+      displayOutput('----------------------------------------');
       if (ladderType.toLowerCase() === 'f') {
         displayOutput('Ladder type: Fixed ladder');
       } else if (ladderType.toLowerCase() === 'p') {
@@ -173,14 +173,14 @@
         displayOutput('Stored height: ' + Math.round(ladderLength + 36));
       }
       displayOutput('Ladder angle: 70°');
-      displayOutput('--------------------------------');
+      displayOutput('----------------------------------------');
       if (ladderType.toLowerCase() === 'f') {
         manufacturing();
       } else if (ladderType.toLowerCase() === 'p') {
         manufacturing();
         manufacturing_pivotal();
       }
-      displayOutput('--------------------------------');
+      displayOutput('----------------------------------------');
       treadSpacing();
     }
     // Function to calculate manufacturing details for fixed ladder
