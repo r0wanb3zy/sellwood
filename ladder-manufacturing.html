@@ -24,7 +24,7 @@
     input[type="text"] {
       width: 100%;
       padding: 10px;
-      margin: 3px 0;
+      margin: 2px 0;
       border: 1px solid #ccc;
       border-radius: 5px;
       font-size: 16px;
@@ -36,21 +36,18 @@
       color: #ccc;
     }
 
-    input[type="radio"] {
+    select {
       appearance: none;
-      width: 20px;
-      height: 20px;
-      Top: 5px;
-      position: relative;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      width: 100%;
+      padding: 10px;
+      margin: 2px 0;
       border: 1px solid #ccc;
-      border-radius: 20%;
-      outline: none;
-      cursor: pointer;
-    }
-
-    input[type="radio"]:checked {
-      background-color: #ED1C24;
-      border-color: #ED1C24;
+      border-radius: 5px;
+      font-size: 16px;
+      box-sizing: border-box;
+      text-align: center;
     }
 
     label {
@@ -69,7 +66,7 @@
       font-weight: bold;
       cursor: pointer;
       transition: background-color 0.3s;
-      margin-top: 12px;
+      margin-top: 2px;
     }
 
     button:hover {
@@ -77,7 +74,7 @@
     }
 
     #output {
-      margin-top: 10px;
+      margin-top: 5px;
       background-color: #f9f9f9;
       padding: 20px;
       border-radius: 5px;
@@ -97,19 +94,19 @@
     <input type="text" id="ladderHeightInput" placeholder="Ladder Height (mm)">
 
     <div>
-      <label>Ladder type:</label>
-      <input type="radio" id="ladderTypeFixed" name="ladderType" value="f" checked>
-      <label for="ladderTypeFixed">Fixed</label>
-      <input type="radio" id="ladderTypePivotal" name="ladderType" value="p">
-      <label for="ladderTypePivotal">Pivotal</label>
+
+      <select id="ladderType">
+        <option value="f">Fixed Ladder</option>
+        <option value="p">Pivotal Ladder</option>
+      </select>
     </div>
 
     <div>
-      <label>Handrails obstructed:</label>
-      <input type="radio" id="handrailsObstructedYes" name="handrailsObstructed" value="y" checked>
-      <label for="handrailsObstructedYes">Yes</label>
-      <input type="radio" id="handrailsObstructedNo" name="handrailsObstructed" value="n">
-      <label for="handrailsObstructedNo">No</label>
+
+      <select id="handrailsObstructed">
+        <option value="y">Handrail Obstructed</option>
+        <option value="n">Handrails Unobstructed</option>
+      </select>
     </div>
 
     <button onclick="calculate()">Start</button>
@@ -142,7 +139,7 @@
         return;
       }
       printButton.style.display = "block"; // Show the print button
-      ladderType = document.querySelector('input[name="ladderType"]:checked').value;
+      ladderType = document.getElementById("ladderType").value;
       ladderHeight = parseFloat(ladderHeight);
       if ((ladderType.toLowerCase() !== 'f' && ladderType.toLowerCase() !== 'p') || isNaN(ladderHeight)) {
         alert('Please select a valid ladder type and provide a valid number for ladder height.');
@@ -153,7 +150,7 @@
         alert('Ladder height should be between 500mm and 5500mm for fixed ladder (f) or pivotal ladder (p).');
         return;
       }
-      handrails = document.querySelector('input[name="handrailsObstructed"]:checked').value;
+      handrails = document.getElementById("handrailsObstructed").value;
       if (ladderHeight >= 2000 && (handrails !== 'y' && handrails !== 'n')) {
         alert('Please select "Yes" or "No" for handrails obstructed.');
         return;
@@ -298,16 +295,16 @@
       printWindow.document.close();
       printWindow.print();
     }
-// Function to handle key press events
-function handleKeyPress(event) {
-  if (event.keyCode === 13) { // Check if the pressed key is Enter (key code 13)
-    calculate(); // Call the calculate function
-  }
-}
+    // Function to handle key press events
+    function handleKeyPress(event) {
+      if (event.keyCode === 13) { // Check if the pressed key is Enter (key code 13)
+        calculate(); // Call the calculate function
+      }
+    }
 
-// Add event listener to the input fields to listen for key press events
-document.getElementById("customerInput").addEventListener("keypress", handleKeyPress);
-document.getElementById("ladderHeightInput").addEventListener("keypress", handleKeyPress);
+    // Add event listener to the input fields to listen for key press events
+    document.getElementById("customerInput").addEventListener("keypress", handleKeyPress);
+    document.getElementById("ladderHeightInput").addEventListener("keypress", handleKeyPress);
   </script>
 </body>
 
