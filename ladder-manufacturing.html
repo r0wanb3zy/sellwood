@@ -19,7 +19,6 @@
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
       padding: 20px;
       text-align: center;
-    
     }
 
     input[type="text"] {
@@ -31,6 +30,10 @@
       font-size: 16px;
       box-sizing: border-box;
       text-align: center;
+    }
+
+    input[type="text"].error {
+      border: 1px solid red;
     }
 
     input[type="text"]::placeholder {
@@ -104,7 +107,7 @@
     <div>
 
       <select id="handrailsObstructed">
-        <option value="y">Handrail Obstructed</option>
+        <option value="y">Handrails Obstructed</option>
         <option value="n">Handrails Unobstructed</option>
       </select>
     </div>
@@ -125,20 +128,28 @@
     var ladderTypeText;
     // Function to calculate ladder measurements and display output
     function calculate() {
-      var customer = document.getElementById("customerInput").value.trim();
-      ladderHeight = document.getElementById("ladderHeightInput").value.trim();
+      var customerInput = document.getElementById("customerInput");
+      var ladderHeightInput = document.getElementById("ladderHeightInput");
       var printButton = document.getElementById("printButton");
+
+      // Remove error class if present
+      customerInput.classList.remove("error");
+      ladderHeightInput.classList.remove("error");
+
+      var customer = customerInput.value.trim();
+      ladderHeight = ladderHeightInput.value.trim();
+
       if (customer === '') {
-        alert('Please enter job name.');
-        printButton.style.display = "none"; // Hide the print button
+        customerInput.classList.add("error");
         return;
       }
       if (ladderHeight === '') {
-        alert('Please enter ladder height.');
-        printButton.style.display = "none"; // Hide the print button
+        ladderHeightInput.classList.add("error");
         return;
       }
+
       printButton.style.display = "block"; // Show the print button
+
       ladderType = document.getElementById("ladderType").value;
       ladderHeight = parseFloat(ladderHeight);
       if ((ladderType.toLowerCase() !== 'f' && ladderType.toLowerCase() !== 'p') || isNaN(ladderHeight)) {
