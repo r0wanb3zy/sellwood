@@ -89,28 +89,37 @@
     #printButton {
       display: none;
     }
+
+    .select-container {
+  display: flex;
+  justify-content: space-between;
+
+}
+
+.select-container select {
+  flex: 1;
+  margin-right: 5px; /* Add margin between select boxes */
+}
+
+.select-container select:last-child {
+  margin-right: 0; /* Remove margin from the last select box */
+}
   </style>
-
 </head>
-
 <body>
   <div id="container">
     <input type="text" id="customerInput" placeholder="Job Name">
     <input type="text" id="ladderHeightInput" placeholder="Ladder Height (mm)">
 
-    <div>
-
+    <div class="select-container">
       <select id="ladderType">
         <option value="f">Fixed Ladder</option>
         <option value="p">Pivotal Ladder</option>
       </select>
-    </div>
-
-    <div>
 
       <select id="handrailsObstructed">
-        <option value="y">Handrails Obstructed</option>
-        <option value="n">Handrails Unobstructed</option>
+        <option value="y">Obstructed</option>
+        <option value="n">Unobstructed</option>
       </select>
     </div>
 
