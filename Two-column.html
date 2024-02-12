@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Split HTML Page</title>
+    <style>
+        /* Add your CSS styles here */
+        #left-column, #right-column {
+            width: 100%;
+            float: none;
+        }
+
+        @media only screen and (min-width: 600px) {
+            #left-column, #right-column {
+                width: 50%;
+                float: left;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="left-column"></div>
+<div id="right-column"></div>
+
+<script>
+    // Function to fetch and insert content
+    function fetchAndInsertContent(url, targetId) {
+        fetch(url)
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById(targetId).innerHTML = data;
+            })
+            .catch(error => {
+                console.error('Error fetching content:', error);
+            });
+    }
+
+    // Call the function for left and right columns
+    fetchAndInsertContent('ladder-manufacturing.html', 'left-column');
+    fetchAndInsertContent('label-printing.html', 'right-column');
+</script>
+
+</body>
+</html>
