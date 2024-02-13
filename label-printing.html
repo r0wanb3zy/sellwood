@@ -253,7 +253,7 @@
   var notesContent = document.getElementById("notes").value; // Do not change the case
   var itemsValue = parseInt(document.getElementById("items").value);
   var showDateCheckbox = document.getElementById("showDate");
-  var currentDate = new Date().toLocaleDateString();
+  var currentDate = new Date().toLocaleDateString('en-NZ');
 
   var printWindow = window.open('', '_blank');
   printWindow.document.write('<html><head><title>Printable Content</title><style>');
