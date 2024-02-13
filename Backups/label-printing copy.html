@@ -21,7 +21,6 @@
       box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
       text-align: center;
       margin: 10px auto; /* Center horizontally with top margin */
-      position: relative; /* Added position relative */
     }
     
     #searchInput {
@@ -107,7 +106,6 @@
       border-radius: 5px;
       cursor: pointer;
       transition: background-color 0.3s ease;
-      margin-top: 4px;
     }
     
     #infoForm button:hover {
@@ -128,7 +126,6 @@
       background-color: #fff;
       color: #333;
     }
-
 </style>
 </head>
 <body>
@@ -150,8 +147,7 @@
         <option value="4">4</option>
         <option value="5">5</option>
       </select>
-      <input type="checkbox" id="showDate"> Show Date<br>
-      <div id="dateDisplay"></div> <!-- Date display section -->
+      <!-- Add print button -->
       <button type="button" onclick="printContent()">Print</button>
     </form>
   </div>
@@ -160,6 +156,7 @@
     // Your existing JavaScript code here
     // Assuming data.csv has columns: Name, Street, Suburb, City, Phone, Notes
     const csvFilePath = 'https://raw.githubusercontent.com/r0wanb3zy/sellwood/main/building-supply-merchants.csv';
+      
 
     // Fetch data from CSV file
     fetch(csvFilePath)
@@ -247,54 +244,47 @@
     }
 
     function printContent() {
-  var nameContent = document.getElementById("name").value.toUpperCase();
-  var addressContent = document.getElementById("address").value.toUpperCase();
-  var phoneContent = formatPhoneNumber(document.getElementById("phone").value.toUpperCase().replace(/[ -]/g, ''));
-  var notesContent = document.getElementById("notes").value; // Do not change the case
-  var itemsValue = parseInt(document.getElementById("items").value);
-  var showDateCheckbox = document.getElementById("showDate");
-  var currentDate = new Date().toLocaleDateString();
+      var nameContent = document.getElementById("name").value.toUpperCase();
+      var addressContent = document.getElementById("address").value.toUpperCase();
+      var phoneContent = formatPhoneNumber(document.getElementById("phone").value.toUpperCase().replace(/[ -]/g, ''));
+      var notesContent = document.getElementById("notes").value; // Do not change the case
+      var itemsValue = parseInt(document.getElementById("items").value);
 
-  var printWindow = window.open('', '_blank');
-  printWindow.document.write('<html><head><title>Printable Content</title><style>');
-  printWindow.document.write('body { font-family: "Arial Narrow", "Arial", sans-serif; margin: 0; padding: 0; }');
-  printWindow.document.write('@media print { body { font-family: "Arial Narrow", "Arial", sans-serif; } }');
-  printWindow.document.write('.content-container { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; font-size: 28px; margin: 0 auto; max-width: 600px; height: 100vh; }');
-  printWindow.document.write('.content-container p { margin: 0; }');
-  printWindow.document.write('.content-container .category { margin: 5px 0; }'); // Reduced space between fields to 5px
-  printWindow.document.write('.notes { font-size: 12pt; }');
-  printWindow.document.write('.contact { font-size: 20px; }');
-  printWindow.document.write('.label { page-break-after: always; }'); // Ensure page breaks between labels
-  printWindow.document.write('.line { border-top: 1px solid black; width: 100%; margin: 0 auto; }'); // Define the line style
-  printWindow.document.write('#dateDisplay { font-size: 12px; position: fixed; bottom: 0px; left: 0px; }'); // Date display style
-  printWindow.document.write('@media print { .label { page-break-after: always; } }'); // Force page break after each label
-  printWindow.document.write('</style></head><body>');
+      var printWindow = window.open('', '_blank');
+      printWindow.document.write('<html><head><title>Printable Content</title><style>');
+      printWindow.document.write('body { font-family: "Arial Narrow", "Arial", sans-serif; margin: 0; padding: 0; }');
+      printWindow.document.write('@media print { body { font-family: "Arial Narrow", "Arial", sans-serif; } }');
+      printWindow.document.write('.content-container { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; font-size: 28px; margin: 0 auto; max-width: 600px; height: 100vh; }');
+      printWindow.document.write('.content-container p { margin: 0; }');
+      printWindow.document.write('.content-container .category { margin: 5px 0; }'); // Reduced space between fields to 5px
+      printWindow.document.write('.notes { font-size: 12pt; }');
+      printWindow.document.write('.contact { font-size: 20px; }');
+      printWindow.document.write('.label { page-break-after: always; }'); // Ensure page breaks between labels
+      printWindow.document.write('.line { border-top: 1px solid black; width: 90%; margin: 0 auto; }'); // Define the line style
+      printWindow.document.write('</style></head><body>');
 
-  if (showDateCheckbox.checked) {
-    printWindow.document.write('<div id="dateDisplay">' + currentDate + '</div>');
-  }
+      for (let i = 1; i <= itemsValue; i++) {
+        printWindow.document.write('<div class="content-container label">');
+        printWindow.document.write('<p class="category"><strong>' + nameContent + '</strong></p>');
+        printWindow.document.write('<div class="line"></div>'); // Add the line between name and address
+        printWindow.document.write('<div class="category"><strong>' + addressContent.replace(/\n/g, '<br>') + '</strong></div>');
+        printWindow.document.write('<div class="line"></div>');
+        printWindow.document.write('<p class="category contact">' + phoneContent + '</p>');
+        printWindow.document.write('<p class="category notes"><em>' + notesContent + '</em></p>');
+        if (itemsValue > 1) {
+          printWindow.document.write('<p class="category" style="font-size: 12pt; font-style: italic;"><strong>' + i + ' of ' + itemsValue + '</strong></p>');
+        }
+        printWindow.document.write('</div>');
+      }
 
-  for (let i = 1; i <= itemsValue; i++) {
-    printWindow.document.write('<div class="content-container label">');
-    printWindow.document.write('<p class="category"><strong>' + nameContent + '</strong></p>');
-    printWindow.document.write('<div class="line"></div>'); // Add the line between name and address
-    printWindow.document.write('<div class="category"><strong>' + addressContent.replace(/\n/g, '<br>') + '</strong></div>');
-    printWindow.document.write('<div class="line"></div>');
-    printWindow.document.write('<p class="category contact">' + phoneContent + '</p>');
-    printWindow.document.write('<p class="category notes"><em>' + notesContent + '</em></p>');
-    if (itemsValue > 1) {
-      printWindow.document.write('<p class="category" style="font-size: 12pt; font-style: italic;"><strong>' + i + ' of ' + itemsValue + '</strong></p>');
+      printWindow.document.write('</body></html>');
+      printWindow.document.close();
+
+      printWindow.onload = function () {
+        printWindow.print();
+      };
     }
-    printWindow.document.write('</div>');
-  }
 
-  printWindow.document.write('</body></html>');
-  printWindow.document.close();
-
-  printWindow.onload = function () {
-    printWindow.print();
-  };
-}
 
     function formatPhoneNumber(phoneNumber) {
       phoneNumber = phoneNumber.replace(/^\+64/, '0');
