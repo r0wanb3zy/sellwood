@@ -6,6 +6,7 @@
   <title>Ladder Manufacturing</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
   <style>
+    /* Your existing CSS styles */
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
@@ -91,22 +92,21 @@
     }
 
     .select-container {
-  display: flex;
-  justify-content: space-between;
+      display: flex;
+      justify-content: space-between;
+    }
 
-}
+    .select-container select {
+      flex: 1;
+      margin-right: 5px; /* Add margin between select boxes */
+    }
 
-.select-container select {
-  flex: 1;
-  margin-right: 5px; /* Add margin between select boxes */
-}
+    .select-container select:last-child {
+      margin-right: 0; /* Remove margin from the last select box */
+    }
 
-.select-container select:last-child {
-  margin-right: 0; /* Remove margin from the last select box */
-}
-
- /* Add the new CSS to override default focus styles for select elements */
- select:focus {
+    /* Override default focus styles for select container */
+    .select-container:focus-within {
       background-color: transparent; /* Change to desired background color or remove to make it transparent */
     }
   </style>
