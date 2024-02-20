@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-  <title>Product Selector</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product Selector</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -12,6 +13,16 @@
     }
 
     .container {
+      max-width: 300px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      text-align: center;
+      margin: 10px auto; /* Center horizontally with top margin */
+    }
+
+    .result-container {
       max-width: 800px;
       margin: 20px auto;
       padding: 0;
@@ -30,40 +41,57 @@
       margin-bottom: 10px;
     }
 
-    .application input[type="radio"] {
+    .application select {
       appearance: none;
-      border-radius: 50%;
-      width: 16px;
-      height: 16px;
-      border: 2px solid #999;
-      transition: 0.2s all linear;
-      margin-right: 5px;
-      position: relative;
-      top: 3px;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+      box-sizing: border-box;
+      text-align: center;
     }
 
-    .application input[type="radio"]:checked {
-      border: 5px solid #ED1C24;
+    .application input[type="radio"] {
+      display: none;
     }
 
-    .radio-group {
+    .application label {
       display: inline-block;
+      cursor: pointer;
+      padding: 8px 12px;
+      background-color: #f0f0f0;
+      border-radius: 4px;
+    }
+
+    .application label:hover {
+      background-color: #ddd;
+    }
+
+    .application input[type="radio"]:checked+label {
+      background-color: #ED1C24;
+      color: white;
     }
 
     input[type="text"] {
-      width: 80px;
-      padding: 4px 5px 4px 5px;
-      margin-bottom: 12px;
-      margin-left: 8px;
-      border: 2px solid #999;
-      border-radius: 4px;
-      outline: none;
-      color: #ED1C24;
-      font-weight: bold;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+      box-sizing: border-box;
+      text-align: center;
     }
 
     input[type="text"]::placeholder {
-      color: black;
+      color: #ccc;
       font-weight: normal;
     }
 
@@ -200,22 +228,18 @@
 <body>
   <div class="container">
     <div class="application">
-      <label for="residential">What is your Application?</label>
-      <div class="radio-group">
-        <input type="radio" name="application" id="residential" value="Residential" checked>
-        <label for="residential">Residential</label>
-        <input type="radio" name="application" id="commercial" value="Commercial">
-        <label for="commercial">Commercial</label>
-      </div>
+      <select id="application" name="application">
+        <option value="Residential" selected>Residential</option>
+        <option value="Commercial">Commercial</option>
+      </select>
     </div>
-    <label for="stud-height">What is your ceiling height (mm)?</label>
-    <input type="text" id="stud-height" placeholder="Enter Height" onkeydown="handleKeyDown(event)">
+    <input type="text" id="stud-height" placeholder="Enter Ceiling Height (mm)" onkeydown="handleKeyDown(event)">
     <button onclick="chooseLadder()">Select</button>
-    <div class="result" id="result"></div>
   </div>
+  <div class="result-container" id="result-container"></div>
   <script>
     function chooseLadder() {
-      const application = document.querySelector('input[name="application"]:checked').value;
+      const application = document.getElementById('application').value;
       const studHeight = parseInt(document.getElementById('stud-height').value);
       let result;
       if (application === 'Residential') {
@@ -348,10 +372,9 @@
           <div><a href="https://www.sellwood.co.nz/contact-us" target="_blank" class="button_ladders">Contact us</a></div>`;
         }
       }
-      const resultElement = document.getElementById('result');
-      const container = resultElement.parentNode;
+      const container = document.getElementById('result-container');
       // Remove result element
-      container.removeChild(resultElement);
+      container.innerHTML = '';
       if (result) {
         // Create a new result element
         const newResultElement = document.createElement('div');
@@ -360,7 +383,7 @@
         newResultElement.innerHTML = result;
         container.appendChild(newResultElement);
       } else {
-        resultElement.innerHTML = 'No ladder found for the provided criteria.';
+        container.innerHTML = 'No ladder found for the provided criteria.';
       }
     }
 
