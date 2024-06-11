@@ -1,247 +1,250 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Product Selector</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin: 0;
-      padding: 0;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Selector</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
 
-    .container {
-      max-width: 300px;
-      background-color: #fff;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      padding: 20px;
-      text-align: center;
-      margin: 10px auto; /* Center horizontally with top margin */
-    }
+        .container {
+            max-width: 300px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            text-align: center;
+            margin: 10px auto;
+            /* Center horizontally with top margin */
+        }
 
-.result-container {
-  max-width: 800px;
-  margin: -20px auto 10px; /* Adjusted margin */
-  padding: 0;
-}
+        .result-container {
+            max-width: 800px;
+            margin: -20px auto 10px;
+            /* Adjusted margin */
+            padding: 0;
+        }
 
-    h1 {
-      font-size: 22px;
-      margin-top: 0;
-      background-color: WhiteSmoke;
-      padding: 5px;
-    }
+        h1 {
+            font-size: 22px;
+            margin-top: 0;
+            background-color: WhiteSmoke;
+            padding: 5px;
+        }
 
-    .application label {
-      display: inline-block;
-      margin-right: 5px;
-      margin-bottom: 10px;
-    }
+        .application label {
+            display: inline-block;
+            margin-right: 5px;
+            margin-bottom: 10px;
+        }
 
-    .application select {
-      appearance: none;
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 5px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      font-size: 16px;
-      box-sizing: border-box;
-      text-align: center;
-    }
+        .application select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+            text-align: center;
+        }
 
-    .application input[type="radio"] {
-      display: none;
-    }
+        .application input[type="radio"] {
+            display: none;
+        }
 
-    .application label {
-      display: inline-block;
-      cursor: pointer;
-      padding: 8px 12px;
-      background-color: #f0f0f0;
-      border-radius: 4px;
-    }
+        .application label {
+            display: inline-block;
+            cursor: pointer;
+            padding: 8px 12px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+        }
 
-    .application label:hover {
-      background-color: #ddd;
-    }
+        .application label:hover {
+            background-color: #ddd;
+        }
 
-    .application input[type="radio"]:checked+label {
-      background-color: #ED1C24;
-      color: white;
-    }
+        .application input[type="radio"]:checked+label {
+            background-color: #ED1C24;
+            color: white;
+        }
 
-    input[type="text"] {
-      appearance: none;
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 5px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      font-size: 16px;
-      box-sizing: border-box;
-      text-align: center;
-    }
+        input[type="text"] {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+            text-align: center;
+        }
 
-    input[type="text"]::placeholder {
-      color: #ccc;
-      font-weight: normal;
-    }
+        input[type="text"]::placeholder {
+            color: #ccc;
+            font-weight: normal;
+        }
 
-    input[type="text"]:focus {
-      border-color: #ED1C24;
-    }
+        input[type="text"]:focus {
+            border-color: #ED1C24;
+        }
 
-    .result {
-      margin-top: 20px;
-      font-weight: bold;
-      text-align: center;
-    }
+        .result {
+            margin-top: 20px;
+            font-weight: bold;
+            text-align: center;
+        }
 
-    button {
-      display: block;
-      width: 100%;
-      padding: 10px 20px;
-      background-color: #ED1C24;
-      border: 1px solid #ED1C24;
-      color: white;
-      text-decoration: none;
-      border-radius: 4px;
-      transition-duration: 0.5s;
-      font-family: Arial, sans-serif;
-      font-weight: bold;
-      font-size: 18px;
-    }
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px 20px;
+            background-color: #ED1C24;
+            border: 1px solid #ED1C24;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition-duration: 0.5s;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            font-size: 18px;
+        }
 
-    button:hover {
-      background-color: #fff;
-      color: #ED1C24;
-    }
+        button:hover {
+            background-color: #fff;
+            color: #ED1C24;
+        }
 
-    .container_ladders {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
+        .container_ladders {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
 
-    .column_ladders {
-      position: relative;
-      text-align: center;
-      max-width: 200px;
-      width: 100%;
-      background-color: #fff;
-      box-sizing: border-box;
-      margin: 5px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
+        .column_ladders {
+            position: relative;
+            text-align: center;
+            max-width: 200px;
+            width: 100%;
+            background-color: #fff;
+            box-sizing: border-box;
+            margin: 5px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
 
-    .column_ladders img {
-      position: relative;
-      max-width: 100%;
-      height: auto;
-      margin-bottom: 6px;
-      z-index: 0;
-      border-radius: 8px;
-    }
+        .column_ladders img {
+            position: relative;
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 6px;
+            z-index: 0;
+            border-radius: 8px;
+        }
 
-    .column_ladders h2 {
-      font-family: Arial, sans-serif;
-      font-size: 18px;
-      margin-bottom: -5px;
-    }
+        .column_ladders h2 {
+            font-family: Arial, sans-serif;
+            font-size: 18px;
+            margin-bottom: -5px;
+        }
 
-    .column_ladders p {
-      font-family: Arial, sans-serif;
-      font-size: 12px;
-      line-height: 1.5;
-    }
+        .column_ladders p {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.5;
+        }
 
-    .column_ladders div {
-      font-family: Arial, sans-serif;
-      font-size: 12px;
-      line-height: 1.5;
-      color: red;
-      margin-top: 10px;
-      font-weight: bold;
-    }
+        .column_ladders div {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.5;
+            color: red;
+            margin-top: 10px;
+            font-weight: bold;
+        }
 
-    hr.line {
-      border-top: 1.5px solid red;
-      margin-left: 15px;
-      margin-right: 15px;
-    }
+        hr.line {
+            border-top: 1.5px solid red;
+            margin-left: 15px;
+            margin-right: 15px;
+        }
 
-    .button_ladders {
-      display: inline-block;
-      padding: 10px 20px;
-      background-color: #ED1C24;
-      border: 1px solid #ED1C24;
-      color: white;
-      text-decoration: none;
-      border-radius: 4px;
-      transition-duration: 0.5s;
-      font-family: Arial, sans-serif;
-      font-weight: bold;
-      font-size: 18px;
-    }
+        .button_ladders {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #ED1C24;
+            border: 1px solid #ED1C24;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition-duration: 0.5s;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            font-size: 18px;
+        }
 
-    .button_ladders:hover {
-      background-color: #fff;
-      color: #ED1C24;
-    }
+        .button_ladders:hover {
+            background-color: #fff;
+            color: #ED1C24;
+        }
 
-    .contact {
-      font-family: Arial, sans-serif;
-      font-size: 12px;
-      line-height: 1.5;
-      font-weight: normal;
-    }
+        .contact {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.5;
+            font-weight: normal;
+        }
 
-    @keyframes fade-in {
-      from {
-        opacity: 0;
-      }
+        @keyframes fade-in {
+            from {
+                opacity: 0;
+            }
 
-      to {
-        opacity: 1;
-      }
-    }
+            to {
+                opacity: 1;
+            }
+        }
 
-    .result {
-      margin-top: 20px;
-      font-weight: bold;
-      text-align: center;
-      opacity: 0;
-      animation: fade-in 1.5s ease forwards;
-    }
-  </style>
+        .result {
+            margin-top: 20px;
+            font-weight: bold;
+            text-align: center;
+            opacity: 0;
+            animation: fade-in 1.5s ease forwards;
+        }
+    </style>
 </head>
 
 <body>
-  <div class="container">
-    <div class="application">
-      <select id="application" name="application">
+    <div class="container">
+        <div class="application">
+            <select id="application" name="application">
         <option value="Residential" selected>Residential</option>
         <option value="Commercial">Commercial</option>
       </select>
+        </div>
+        <input type="text" id="stud-height" placeholder="Enter Ceiling Height (mm)" onkeydown="handleKeyDown(event)">
+        <button onclick="chooseLadder()">Select</button>
     </div>
-    <input type="text" id="stud-height" placeholder="Enter Ceiling Height (mm)" onkeydown="handleKeyDown(event)">
-    <button onclick="chooseLadder()">Select</button>
-  </div>
-  <div class="result-container" id="result-container"></div>
-  <script>
-    function chooseLadder() {
+    <div class="result-container" id="result-container"></div>
+    <script>
+        function chooseLadder() {
       const application = document.getElementById('application').value;
       const studHeight = parseInt(document.getElementById('stud-height').value);
       let result;
@@ -269,7 +272,30 @@
       <p>• Smaller Opening<br>• Fits Between Trusses in Hall</p>
          </div>
          </div>`;
-        } else if (studHeight >= 2441 && studHeight <= 2800) {
+        } else if (studHeight >= 2500 && studHeight <= 2550) {
+          result = `<div class="container_ladders">
+         <div class="column_ladders" data-price="$699">
+             <img src="images/product-selector/P30.png" alt="Image 1">
+             <a href="https://www.sellwood.co.nz/product/premier-range/p30-attic-ladder" target="_blank" class="button_ladders">Premier P30</a>
+             <div class="height">Ceiling Heights: 2250 - 3050<br>Opening Required: 1300 x 600</div>
+             <hr class="line">
+         </div>
+         <div class="column_ladders" data-price="$1499">
+             <img src="images/product-selector/D28.png" alt="Image 1">
+             <a href="https://www.sellwood.co.nz/product/deluxe-range/d28-attic-ladder" target="_blank" class="button_ladders">Deluxe D28</a>
+             <div class="height">Ceiling Heights: 2250 - 2800<br>Opening Required: 1400 x 650</div>
+             <hr class="line">
+             <p>• Gentle Angle & Deeper Treads<br>• Easier to Climb<br>• Wider ladder<br>• Bigger opening</p>
+         </div>
+         <div class="column_ladders" data-price="$899">
+             <img src="images/product-selector/Q24X.png" alt="Image 1">
+             <a href="https://www.sellwood.co.nz/product/premier-range/q24-attic-ladder" target="_blank" class="button_ladders">Q24 Extension</a>
+             <div class="height">Ceiling Heights: 2500 - 2550<br>Opening Required: 835 x 650</div>
+             <hr class="line">
+      <p>• Used with Q24 Attic Ladder<br>• Extends height up to 2550mm</p>
+         </div>
+         </div>`;
+        } else if (studHeight >= 2551 && studHeight <= 2800) {
           result = `<div class="container_ladders">
          <div class="column_ladders" data-price="$699">
              <img src="images/product-selector/P30.png" alt="Image 1">
@@ -395,7 +421,7 @@
         chooseLadder();
       }
     }
-  </script>
+    </script>
 </body>
 
 </html>
