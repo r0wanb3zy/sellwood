@@ -350,49 +350,61 @@
             // Add more ladder objects here
         ];
 
-        function chooseLadder() {
-            const application = document.getElementById('application').value;
-            const studHeight = parseInt(document.getElementById('stud-height').value);
-            let result = '';
-            
-            // Filter ladders based on application and studHeight
-            const filteredLadders = ladders.filter(ladder => ladder.application === application && 
-                studHeight >= parseInt(ladder.studHeight.split('-')[0]) && 
-                studHeight <= parseInt(ladder.studHeight.split('-')[1]));
+function chooseLadder() {
+    const application = document.getElementById('application').value;
+    const studHeight = document.getElementById('stud-height').value.toLowerCase(); // Convert to lowercase to handle case insensitivity
+    let result = '';
 
-            // Generate HTML dynamically for each ladder
-            if (filteredLadders.length > 0) {
-                result += '<div class="container_ladders">';
-                filteredLadders.forEach(ladder => {
-                    result += `<div class="column_ladders" data-price="${ladder.price}">
-                        <img src="${ladder.imageUrl}" alt="${ladder.name}">
-                        <a href="${ladder.linkUrl}" target="_blank" class="button_ladders">${ladder.name}</a>
-                        <div class="height">${ladder.specs}</div>
-                        <hr class="line">
-                        <p>${ladder.description}</p>
-                    </div>`;
-                });
-                result += '</div>';
-            } else {
-                result = '<div class="contact"><p><strong>No suitable standard ladders for the given height.<br><br>Please contact us further for advice.</strong></p></div>';
-            }
+    if (studHeight === 'sellwood') {
+        // Display all ladders
+        result += '<div class="container_ladders">';
+        ladders.forEach(ladder => {
+            result += `<div class="column_ladders" data-price="${ladder.price}">
+                <img src="${ladder.imageUrl}" alt="${ladder.name}">
+                <a href="${ladder.linkUrl}" target="_blank" class="button_ladders">${ladder.name}</a>
+                <div class="height">${ladder.specs}</div>
+                <hr class="line">
+                <p>${ladder.description}</p>
+            </div>`;
+        });
+        result += '</div>';
+    } else {
+        // Convert studHeight to integer for filtering
+        const studHeightInt = parseInt(studHeight);
+        // Filter ladders based on application and studHeight
+        const filteredLadders = ladders.filter(ladder => ladder.application === application && 
+            studHeightInt >= parseInt(ladder.studHeight.split('-')[0]) && 
+            studHeightInt <= parseInt(ladder.studHeight.split('-')[1]));
 
-            const container = document.getElementById('result-container');
-            // Remove result element
-            container.innerHTML = '';
-            // Create a new result element
-            const newResultElement = document.createElement('div');
-            newResultElement.setAttribute('class', 'result');
-            newResultElement.setAttribute('id', 'result');
-            newResultElement.innerHTML = result;
-            container.appendChild(newResultElement);
+        // Generate HTML dynamically for each ladder
+        if (filteredLadders.length > 0) {
+            result += '<div class="container_ladders">';
+            filteredLadders.forEach(ladder => {
+                result += `<div class="column_ladders" data-price="${ladder.price}">
+                    <img src="${ladder.imageUrl}" alt="${ladder.name}">
+                    <a href="${ladder.linkUrl}" target="_blank" class="button_ladders">${ladder.name}</a>
+                    <div class="height">${ladder.specs}</div>
+                    <hr class="line">
+                    <p>${ladder.description}</p>
+                </div>`;
+            });
+            result += '</div>';
+        } else {
+            result = '<div class="contact"><p><strong>No suitable standard ladders for the given height.<br><br>Please contact us further for advice.</strong></p></div>';
         }
+    }
 
-        function handleKeyDown(event) {
-            if (event.key === 'Enter') {
-                chooseLadder();
-            }
-        }
+    const container = document.getElementById('result-container');
+    // Remove result element
+    container.innerHTML = '';
+    // Create a new result element
+    const newResultElement = document.createElement('div');
+    newResultElement.setAttribute('class', 'result');
+    newResultElement.setAttribute('id', 'result');
+    newResultElement.innerHTML = result;
+    container.appendChild(newResultElement);
+}
+
     </script>
 </body>
 
