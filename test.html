@@ -247,7 +247,7 @@
     <script>
         // Define ladder information in a dynamic array
         const ladders = [
-                      {
+            {
                 name: "Premier P30",
                 studHeight: "2250-3050",
                 application: "Residential",
@@ -257,7 +257,7 @@
                 specs: "Ceiling Heights: 2250 - 3050<br>Opening Required: 1300 x 600",
                 description: ""
             },
-                                {
+            {
                 name: "Premier P36",
                 studHeight: "3051-3660",
                 application: "Residential",
@@ -277,7 +277,7 @@
                 specs: "Ceiling Heights: 2250 - 2800<br>Opening Required: 1400 x 650",
                 description: "• Gentle Angle & Deeper Treads<br>• Easier to Climb<br>• Wider ladder<br>• Bigger opening"
             },
-                      {
+            {
                 name: "Deluxe D30",
                 studHeight: "2801-3100",
                 application: "Residential",
@@ -287,7 +287,7 @@
                 specs: "Ceiling Heights: 2800 - 3100<br>Opening Required: 1450 x 650",
                 description: "• Gentle Angle & Deeper Treads<br>• Easier to Climb<br>• Wider ladder<br>• Bigger opening"
             },
-                                {
+            {
                 name: "Deluxe D36",
                 studHeight: "3101-3660",
                 application: "Residential",
@@ -297,7 +297,7 @@
                 specs: "Ceiling Heights: 3100 - 3660<br>Opening Required: 1450 x 650",
                 description: "• Gentle Angle & Deeper Treads<br>• Easier to Climb<br>• Wider ladder<br>• Bigger opening"
             },
-                                {
+            {
                 name: "Truss Q24",
                 studHeight: "2250-2440",
                 application: "Residential",
@@ -307,7 +307,7 @@
                 specs: "Ceiling Heights: 2250 - 2440<br>Opening Required: 835 x 650",
                 description: "• Smaller Opening<br>• Fits Between Trusses in Hall"
             },
-                                          {
+            {
                 name: "Q24 Extension",
                 studHeight: "2500-2550",
                 application: "Residential",
@@ -317,7 +317,7 @@
                 specs: "Ceiling Heights: 2500 - 2550<br>Opening Required: 1300 x 600",
                 description: "• Used with Q24 Attic Ladder<br>• Extends height up to 2550mm"
             },
-                                {
+            {
                 name: "Commercial A25",
                 studHeight: "2300-2450",
                 application: "Commercial",
@@ -327,7 +327,7 @@
                 specs: "Ceiling Heights: 2300 - 2450<br>Opening Required: 1400 x 650",
                 description: "• Heavy Duty Alumninium"
             },
-                                          {
+            {
                 name: "Commercial A28",
                 studHeight: "2550-2700",
                 application: "Commercial",
@@ -337,7 +337,7 @@
                 specs: "Ceiling Heights: 2550 - 2700<br>Opening Required: 1400 x 650",
                 description: "• Heavy Duty Alumninium"
             },
-                                                    {
+            {
                 name: "Commercial A36",
                 studHeight: "2701-3660",
                 application: "Commercial",
@@ -346,66 +346,70 @@
                 price: "$3499",
                 specs: "Ceiling Heights: 2700 - 3660<br>Opening Required: 1400 x 650",
                 description: "• Heavy Duty Alumninium"
-            },
+            }
             // Add more ladder objects here
         ];
 
-function chooseLadder() {
-    const application = document.getElementById('application').value;
-    const studHeight = document.getElementById('stud-height').value.toLowerCase(); // Convert to lowercase to handle case insensitivity
-    let result = '';
+        function chooseLadder() {
+            const application = document.getElementById('application').value;
+            const studHeight = document.getElementById('stud-height').value.toLowerCase(); // Convert to lowercase to handle case insensitivity
+            let result = '';
 
-    if (studHeight === 'sellwood') {
-        // Display all ladders
-        result += '<div class="container_ladders">';
-        ladders.forEach(ladder => {
-            result += `<div class="column_ladders" data-price="${ladder.price}">
-                <img src="${ladder.imageUrl}" alt="${ladder.name}">
-                <a href="${ladder.linkUrl}" target="_blank" class="button_ladders">${ladder.name}</a>
-                <div class="height">${ladder.specs}</div>
-                <hr class="line">
-                <p>${ladder.description}</p>
-            </div>`;
-        });
-        result += '</div>';
-    } else {
-        // Convert studHeight to integer for filtering
-        const studHeightInt = parseInt(studHeight);
-        // Filter ladders based on application and studHeight
-        const filteredLadders = ladders.filter(ladder => ladder.application === application && 
-            studHeightInt >= parseInt(ladder.studHeight.split('-')[0]) && 
-            studHeightInt <= parseInt(ladder.studHeight.split('-')[1]));
+            if (studHeight === 'sellwood') {
+                // Display all ladders
+                result += '<div class="container_ladders">';
+                ladders.forEach(ladder => {
+                    result += `<div class="column_ladders" data-price="${ladder.price}">
+                        <img src="${ladder.imageUrl}" alt="${ladder.name}">
+                        <a href="${ladder.linkUrl}" target="_blank" class="button_ladders">${ladder.name}</a>
+                        <div class="height">${ladder.specs}</div>
+                        <hr class="line">
+                        <p>${ladder.description}</p>
+                    </div>`;
+                });
+                result += '</div>';
+            } else {
+                // Convert studHeight to integer for filtering
+                const studHeightInt = parseInt(studHeight);
+                // Filter ladders based on application and studHeight
+                const filteredLadders = ladders.filter(ladder => ladder.application === application && 
+                    studHeightInt >= parseInt(ladder.studHeight.split('-')[0]) && 
+                    studHeightInt <= parseInt(ladder.studHeight.split('-')[1]));
 
-        // Generate HTML dynamically for each ladder
-        if (filteredLadders.length > 0) {
-            result += '<div class="container_ladders">';
-            filteredLadders.forEach(ladder => {
-                result += `<div class="column_ladders" data-price="${ladder.price}">
-                    <img src="${ladder.imageUrl}" alt="${ladder.name}">
-                    <a href="${ladder.linkUrl}" target="_blank" class="button_ladders">${ladder.name}</a>
-                    <div class="height">${ladder.specs}</div>
-                    <hr class="line">
-                    <p>${ladder.description}</p>
-                </div>`;
-            });
-            result += '</div>';
-        } else {
-            result = '<div class="contact"><p><strong>No suitable standard ladders for the given height.<br><br>Please contact us further for advice.</strong></p></div>';
+                // Generate HTML dynamically for each ladder
+                if (filteredLadders.length > 0) {
+                    result += '<div class="container_ladders">';
+                    filteredLadders.forEach(ladder => {
+                        result += `<div class="column_ladders" data-price="${ladder.price}">
+                            <img src="${ladder.imageUrl}" alt="${ladder.name}">
+                            <a href="${ladder.linkUrl}" target="_blank" class="button_ladders">${ladder.name}</a>
+                            <div class="height">${ladder.specs}</div>
+                            <hr class="line">
+                            <p>${ladder.description}</p>
+                        </div>`;
+                    });
+                    result += '</div>';
+                } else {
+                    result = '<div class="contact"><p><strong>No suitable standard ladders for the given height.<br><br>Please contact us further for advice.</strong></p></div>';
+                }
+            }
+
+            const container = document.getElementById('result-container');
+            // Remove result element
+            container.innerHTML = '';
+            // Create a new result element
+            const newResultElement = document.createElement('div');
+            newResultElement.setAttribute('class', 'result');
+            newResultElement.setAttribute('id', 'result');
+            newResultElement.innerHTML = result;
+            container.appendChild(newResultElement);
         }
-    }
 
-    const container = document.getElementById('result-container');
-    // Remove result element
-    container.innerHTML = '';
-    // Create a new result element
-    const newResultElement = document.createElement('div');
-    newResultElement.setAttribute('class', 'result');
-    newResultElement.setAttribute('id', 'result');
-    newResultElement.innerHTML = result;
-    container.appendChild(newResultElement);
-}
-
+        function handleKeyDown(event) {
+            if (event.key === 'Enter') {
+                chooseLadder();
+            }
+        }
     </script>
 </body>
-
 </html>
