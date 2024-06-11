@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Selector</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 300px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            text-align: center;
+            margin: 10px auto;
+            /* Center horizontally with top margin */
+        }
+
+        .result-container {
+            max-width: 800px;
+            margin: -20px auto 10px;
+            /* Adjusted margin */
+            padding: 0;
+        }
+
+        h1 {
+            font-size: 22px;
+            margin-top: 0;
+            background-color: WhiteSmoke;
+            padding: 5px;
+        }
+
+        .application label {
+            display: inline-block;
+            margin-right: 5px;
+            margin-bottom: 10px;
+        }
+
+        .application select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .application input[type="radio"] {
+            display: none;
+        }
+
+        .application label {
+            display: inline-block;
+            cursor: pointer;
+            padding: 8px 12px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+        }
+
+        .application label:hover {
+            background-color: #ddd;
+        }
+
+        .application input[type="radio"]:checked+label {
+            background-color: #ED1C24;
+            color: white;
+        }
+
+        input[type="text"] {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        input[type="text"]::placeholder {
+            color: #ccc;
+            font-weight: normal;
+        }
+
+        input[type="text"]:focus {
+            border-color: #ED1C24;
+        }
+
+        .result {
+            margin-top: 20px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px 20px;
+            background-color: #ED1C24;
+            border: 1px solid #ED1C24;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition-duration: 0.5s;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        button:hover {
+            background-color: #fff;
+            color: #ED1C24;
+        }
+
+        .container_ladders {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .column_ladders {
+            position: relative;
+            text-align: center;
+            max-width: 200px;
+            width: 100%;
+            background-color: #fff;
+            box-sizing: border-box;
+            margin: 5px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .column_ladders img {
+            position: relative;
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 6px;
+            z-index: 0;
+            border-radius: 8px;
+        }
+
+        .column_ladders h2 {
+            font-family: Arial, sans-serif;
+            font-size: 18px;
+            margin-bottom: -5px;
+        }
+
+        .column_ladders p {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .column_ladders div {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.5;
+            color: red;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        hr.line {
+            border-top: 1.5px solid red;
+            margin-left: 15px;
+            margin-right: 15px;
+        }
+
+        .button_ladders {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #ED1C24;
+            border: 1px solid #ED1C24;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition-duration: 0.5s;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .button_ladders:hover {
+            background-color: #fff;
+            color: #ED1C24;
+        }
+
+        .contact {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.5;
+            font-weight: normal;
+        }
+
+        @keyframes fade-in {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .result {
+            margin-top: 20px;
+            font-weight: bold;
+            text-align: center;
+            opacity: 0;
+            animation: fade-in 1.5s ease forwards;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="application">
+            <select id="application" name="application">
+                <option value="Residential" selected>Residential</option>
+                <option value="Commercial">Commercial</option>
+            </select>
+        </div>
+        <input type="text" id="stud-height" placeholder="Enter Ceiling Height (mm)" onkeydown="handleKeyDown(event)">
+        <button onclick="chooseLadder()">Select</button>
+    </div>
+    <div class="result-container" id="result-container"></div>
+    <script>
+        const ladders = [
+            { name: "Premier P30", height: [2250, 3050], application: "Residential", price: "$699", img: "images/product-selector/P30.png", link: "https://www.sellwood.co.nz/product/premier-range/p30-attic-ladder", opening: "1300 x 600" },
+            { name: "Deluxe D28", height: [2250, 2800], application: "Residential", price: "$1499", img: "images/product-selector/D28.png", link: "https://www.sellwood.co.nz/product/deluxe-range/d28-attic-ladder", opening: "1400 x 650", description: "• Gentle Angle & Deeper Treads<br>• Easier to Climb<br>• Wider ladder<br>• Bigger opening" },
+            { name: "Truss Q24", height: [2250, 2440], application: "Residential", price: "$899", img: "images/product-selector/Q24.png", link: "https://www.sellwood.co.nz/product/premier-range/q24-attic-ladder", opening: "835 x 650", description: "• Smaller Opening<br>• Fits Between Trusses in Hall" },
+            { name: "Q24 Extension", height: [2500, 2550], application: "Residential", price: "$899", img: "images/product-selector/Q24X.png", link: "https://www.sellwood.co.nz/product/premier-range/q24-attic-ladder", opening: "835 x 650", description: "• Smaller Opening<br>• Fits Between Trusses in Hall" },
+            { name: "Commercial C40", height: [2250, 3050], application: "Commercial", price: "$2499", img: "images/product-selector/C40.png", link: "https://www.sellwood.co.nz/product/industrial-range/c40-attic-ladder", opening: "1400 x 700" },
+            { name: "Commercial C50", height: [2250, 3500], application: "Commercial", price: "$2999", img: "images/product-selector/C50.png", link: "https://www.sellwood.co.nz/product/industrial-range/c50-attic-ladder", opening: "1500 x 700" }
+        ];
+
+        function chooseLadder() {
+            const application = document.getElementById('application').value;
+            const studHeight = document.getElementById('stud-height').value;
+            const parsedStudHeight = parseInt(studHeight);
+
+            const resultContainer = document.getElementById('result-container');
+            resultContainer.innerHTML = '';
+
+            if (isNaN(parsedStudHeight)) {
+                resultContainer.innerHTML = '<div class="result">Please enter a valid ceiling height.</div>';
+                return;
+            }
+
+            const selectedLadders = ladders.filter(ladder => ladder.application === application && parsedStudHeight >= ladder.height[0] && parsedStudHeight <= ladder.height[1]);
+
+            if (selectedLadders.length > 0) {
+                selectedLadders.forEach(item => {
+                    resultContainer.innerHTML += `
+                        <div class="column_ladders">
+                            <a href="${item.link}" target="_blank">
+                                <img src="${item.img}" alt="${item.name}">
+                                <h2>${item.name}</h2>
+                                <p>${item.height[0]} - ${item.height[1]} mm Stud Height</p>
+                                <p>Opening: ${item.opening}</p>
+                                ${item.description ? `<p>${item.description}</p>` : ''}
+                                <div>${item.price}</div>
+                            </a>
+                        </div>`;
+                });
+            } else {
+                resultContainer.innerHTML = '<div class="result">No ladders available for the entered ceiling height.</div>';
+            }
+        }
+
+        function handleKeyDown(event) {
+            if (event.key === 'Enter') {
+                chooseLadder();
+            }
+        }
+    </script>
+</body>
+
+</html>
