@@ -1,415 +1,318 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Selector</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 0;
-            padding: 0;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Label Printing</title>
+<style>
+    /* Modern CSS styles */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    
+    #container {
+      width: 250px;
+      max-width: 600px;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      margin: 10px auto; /* Center horizontally with top margin */
+      position: relative; /* Added position relative */
+    }
+    
+    #searchInput {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ed1c24;
+      border-radius: 5px;
+      margin-bottom: 5px;
+      box-sizing: border-box;
+      outline: none;
+      text-align: center;
+      font-family: Arial, sans-serif; /* Set font family */
+    }
+    
+    #searchInput::placeholder {
+      color: #ed1c24;
+      font-size: 16px; /* Set font size for placeholder */
+    }
+    
+    .dropdown {
+      position: relative;
+    }
+    
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #f9f9f9;
+      width: 250px; /* Set width to 250px */
+      max-height: 300px; /* Adjust the maximum height as needed */
+      overflow-y: auto; /* Enable vertical scrolling */
+      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      z-index: 1;
+    }
+    
+    .dropdown-content a {
+      padding: 12px 16px;
+      display: block;
+    }
+    
+    .dropdown-content a:hover {
+      background-color: #f1f1f1;
+    }
+    
+    #infoForm label {
+      display: none; /* Hide labels */
+    }
+    
+    #infoForm input[type="text"],
+    #infoForm textarea,
+    #infoForm select {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin-bottom: 5px; /* Adjusted margin to 5px */
+      box-sizing: border-box;
+      resize: vertical;
+      text-align: center;
+      font-family: Arial, sans-serif; /* Set font family */
+    }
 
-        .container {
-            max-width: 300px;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            text-align: center;
-            margin: 10px auto;
-            /* Center horizontally with top margin */
-        }
+    #infoForm input[type="text"]::placeholder,
+    #infoForm textarea::placeholder,
+    #infoForm select::placeholder {
+      color: #ccc; /* Light grey placeholder */
+      font-size: 16px; /* Set font size for placeholder */
+    }
+    
+    #infoForm #address {
+      margin-bottom: 1px; /* Adjusted margin for address field */
+    }
+    
+    #infoForm button {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      background-color: #ed1c24;
+      font-weight: bold;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      margin-top: 4px;
+    }
+    
+    #infoForm button:hover {
+      background-color: #c70014;
+    }
+    
+    #infoForm select {
+      background-color: #fff;
+      color: #333;
+      background-image: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      padding-right: 10px;
+    }
 
-        .result-container {
-            max-width: 800px;
-            margin: -20px auto 10px;
-            /* Adjusted margin */
-            padding: 0;
-        }
+    #infoForm select option {
+      background-color: #fff;
+      color: #333;
+    }
 
-        h1 {
-            font-size: 22px;
-            margin-top: 0;
-            background-color: WhiteSmoke;
-            padding: 5px;
-        }
-
-        .application label {
-            display: inline-block;
-            margin-right: 5px;
-            margin-bottom: 10px;
-        }
-
-        .application select {
-            appearance: none;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 5px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 16px;
-            box-sizing: border-box;
-            text-align: center;
-        }
-
-        .application input[type="radio"] {
-            display: none;
-        }
-
-        .application label {
-            display: inline-block;
-            cursor: pointer;
-            padding: 8px 12px;
-            background-color: #f0f0f0;
-            border-radius: 4px;
-        }
-
-        .application label:hover {
-            background-color: #ddd;
-        }
-
-        .application input[type="radio"]:checked+label {
-            background-color: #ED1C24;
-            color: white;
-        }
-
-        input[type="text"] {
-            appearance: none;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 5px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 16px;
-            box-sizing: border-box;
-            text-align: center;
-        }
-
-        input[type="text"]::placeholder {
-            color: #ccc;
-            font-weight: normal;
-        }
-
-        input[type="text"]:focus {
-            border-color: #ED1C24;
-        }
-
-        .result {
-            margin-top: 20px;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        button {
-            display: block;
-            width: 100%;
-            padding: 10px 20px;
-            background-color: #ED1C24;
-            border: 1px solid #ED1C24;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            transition-duration: 0.5s;
-            font-family: Arial, sans-serif;
-            font-weight: bold;
-            font-size: 18px;
-        }
-
-        button:hover {
-            background-color: #fff;
-            color: #ED1C24;
-        }
-
-        .container_ladders {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .column_ladders {
-            position: relative;
-            text-align: center;
-            max-width: 200px;
-            width: 100%;
-            background-color: #fff;
-            box-sizing: border-box;
-            margin: 5px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .column_ladders img {
-            position: relative;
-            max-width: 100%;
-            height: auto;
-            margin-bottom: 6px;
-            z-index: 0;
-            border-radius: 8px;
-        }
-
-        .column_ladders h2 {
-            font-family: Arial, sans-serif;
-            font-size: 18px;
-            margin-bottom: -5px;
-        }
-
-        .column_ladders p {
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-            line-height: 1.5;
-        }
-
-        .column_ladders div {
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-            line-height: 1.5;
-            color: red;
-            margin-top: 10px;
-            font-weight: bold;
-        }
-
-        hr.line {
-            border-top: 1.5px solid red;
-            margin-left: 15px;
-            margin-right: 15px;
-        }
-
-        .button_ladders {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: #ED1C24;
-            border: 1px solid #ED1C24;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            transition-duration: 0.5s;
-            font-family: Arial, sans-serif;
-            font-weight: bold;
-            font-size: 18px;
-        }
-
-        .button_ladders:hover {
-            background-color: #fff;
-            color: #ED1C24;
-        }
-
-        .contact {
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-            line-height: 1.5;
-            font-weight: normal;
-        }
-
-        @keyframes fade-in {
-            from {
-                opacity: 0;
-            }
-
-            to {
-                opacity: 1;
-            }
-        }
-
-        .result {
-            margin-top: 20px;
-            font-weight: bold;
-            text-align: center;
-            opacity: 0;
-            animation: fade-in 1.5s ease forwards;
-        }
-    </style>
+</style>
 </head>
-
 <body>
-    <div class="container">
-        <div class="application">
-            <select id="application" name="application">
-                <option value="Residential" selected>Residential</option>
-                <option value="Commercial">Commercial</option>
-            </select>
-        </div>
-        <input type="text" id="stud-height" placeholder="Enter Ceiling Height (mm)" onkeydown="handleKeyDown(event)">
-        <button onclick="chooseLadder()">Select</button>
-    </div>
-    <div class="result-container" id="result-container"></div>
 
-    <script>
-        // Define ladder information in a dynamic array
-        const ladders = [
-            {
-                name: "Premier P30",
-                studHeight: "2250-3050",
-                application: "Residential",
-                imageUrl: "images/product-selector/P30.png",
-                linkUrl: "https://www.sellwood.co.nz/product/premier-range/p30-attic-ladder",
-                price: "$699",
-                specs: "Ceiling Heights: 2250 - 3050<br>Opening Required: 1300 x 600",
-                description: ""
-            },
-            {
-                name: "Premier P36",
-                studHeight: "3051-3660",
-                application: "Residential",
-                imageUrl: "images/product-selector/P36.png",
-                linkUrl: "https://www.sellwood.co.nz/product/premier-range/p36-attic-ladder",
-                price: "$1599",
-                specs: "Ceiling Heights: 3050 - 3660<br>Opening Required: 1300 x 600",
-                description: ""
-            },
-            {
-                name: "Deluxe D28",
-                studHeight: "2250-2800",
-                application: "Residential",
-                imageUrl: "images/product-selector/D28.png",
-                linkUrl: "https://www.sellwood.co.nz/product/deluxe-range/d28-attic-ladder",
-                price: "$1499",
-                specs: "Ceiling Heights: 2250 - 2800<br>Opening Required: 1400 x 650",
-                description: "• Gentle Angle & Deeper Treads<br>• Easier to Climb<br>• Wider ladder<br>• Bigger opening"
-            },
-            {
-                name: "Deluxe D30",
-                studHeight: "2801-3100",
-                application: "Residential",
-                imageUrl: "images/product-selector/D30.png",
-                linkUrl: "https://www.sellwood.co.nz/product/deluxe-range/d30-attic-ladder",
-                price: "$1799",
-                specs: "Ceiling Heights: 2800 - 3100<br>Opening Required: 1450 x 650",
-                description: "• Gentle Angle & Deeper Treads<br>• Easier to Climb<br>• Wider ladder<br>• Bigger opening"
-            },
-            {
-                name: "Deluxe D36",
-                studHeight: "3101-3660",
-                application: "Residential",
-                imageUrl: "images/product-selector/D36.png",
-                linkUrl: "https://www.sellwood.co.nz/product/deluxe-range/d36-attic-ladder",
-                price: "$2199",
-                specs: "Ceiling Heights: 3100 - 3660<br>Opening Required: 1450 x 650",
-                description: "• Gentle Angle & Deeper Treads<br>• Easier to Climb<br>• Wider ladder<br>• Bigger opening"
-            },
-            {
-                name: "Truss Q24",
-                studHeight: "2250-2440",
-                application: "Residential",
-                imageUrl: "images/product-selector/Q24.png",
-                linkUrl: "https://www.sellwood.co.nz/product/truss-range/q24-attic-ladder",
-                price: "$899",
-                specs: "Ceiling Heights: 2250 - 2440<br>Opening Required: 835 x 650",
-                description: "• Smaller Opening<br>• Fits Between Trusses in Hall"
-            },
-            {
-                name: "Q24 Extension",
-                studHeight: "2500-2550",
-                application: "Residential",
-                imageUrl: "images/product-selector/Q24X.png",
-                linkUrl: "https://www.sellwood.co.nz/product/truss-range/q24-extension",
-                price: "$59",
-                specs: "Ceiling Heights: 2500 - 2550<br>Opening Required: 835 x 650",
-                description: "• Used with Q24 Attic Ladder<br>• Extends height up to 2550mm"
-            },
-            {
-                name: "Commercial A25",
-                studHeight: "2300-2450",
-                application: "Commercial",
-                imageUrl: "images/product-selector/A25.png",
-                linkUrl: "https://www.sellwood.co.nz/product/commercial-range/a25-attic-ladder",
-                price: "$2199",
-                specs: "Ceiling Heights: 2300 - 2450<br>Opening Required: 1400 x 650",
-                description: "• Heavy Duty Alumninium"
-            },
-            {
-                name: "Commercial A28",
-                studHeight: "2550-2700",
-                application: "Commercial",
-                imageUrl: "images/product-selector/A28.png",
-                linkUrl: "https://www.sellwood.co.nz/product/commercial-range/a28-attic-ladder",
-                price: "$2299",
-                specs: "Ceiling Heights: 2550 - 2700<br>Opening Required: 1400 x 650",
-                description: "• Heavy Duty Alumninium"
-            },
-            {
-                name: "Commercial A36",
-                studHeight: "2701-3660",
-                application: "Commercial",
-                imageUrl: "images/product-selector/A36.png",
-                linkUrl: "https://www.sellwood.co.nz/product/commercial-range/a36-attic-ladder",
-                price: "$3499",
-                specs: "Ceiling Heights: 2700 - 3660<br>Opening Required: 1400 x 650",
-                description: "• Heavy Duty Alumninium"
-            }
-            // Add more ladder objects here
-        ];
+  <div id="container">
+    <input type="text" id="searchInput" placeholder="Search" tabindex="1">
+    <div id="searchResults" class="dropdown"></div>
 
-        function chooseLadder() {
-            const application = document.getElementById('application').value;
-            const studHeight = document.getElementById('stud-height').value.toLowerCase(); // Convert to lowercase to handle case insensitivity
-            let result = '';
+    <form id="infoForm">
+      <input type="text" id="name" placeholder="Name">
+      <textarea id="address" placeholder="Street&#10;Suburb&#10;City" rows="3"></textarea>
+      <input type="text" id="phone" placeholder="Phone">
+      <input type="text" id="notes" placeholder="Notes">
+      <!-- Add dropdown menu -->
+      <select id="items">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+      </select>
+      <input type="checkbox" id="showDate"> Show Date<br>
+      <div id="dateDisplay"></div> <!-- Date display section -->
+      <button type="button" onclick="printContent()">Print</button>
+    </form>
+  </div>
 
-            if (studHeight === 'sellwood') {
-                // Display all ladders
-                result += '<div class="container_ladders">';
-                ladders.forEach(ladder => {
-                    result += `<div class="column_ladders" data-price="${ladder.price}">
-                        <img src="${ladder.imageUrl}" alt="${ladder.name}">
-                        <a href="${ladder.linkUrl}" target="_blank" class="button_ladders">${ladder.name}</a>
-                        <div class="height">${ladder.specs}</div>
-                        <hr class="line">
-                        <p>${ladder.description}</p>
-                    </div>`;
-                });
-                result += '</div>';
-            } else {
-                // Convert studHeight to integer for filtering
-                const studHeightInt = parseInt(studHeight);
-                // Filter ladders based on application and studHeight
-                const filteredLadders = ladders.filter(ladder => ladder.application === application && 
-                    studHeightInt >= parseInt(ladder.studHeight.split('-')[0]) && 
-                    studHeightInt <= parseInt(ladder.studHeight.split('-')[1]));
+  <script>
+    // Your existing JavaScript code here
+    // Assuming data.csv has columns: Name, Street, Suburb, City, Phone, Notes
+    const csvFilePath = 'https://raw.githubusercontent.com/r0wanb3zy/sellwood/main/building-supply-merchants.csv';
 
-                // Generate HTML dynamically for each ladder
-                if (filteredLadders.length > 0) {
-                    result += '<div class="container_ladders">';
-                    filteredLadders.forEach(ladder => {
-                        result += `<div class="column_ladders" data-price="${ladder.price}">
-                            <img src="${ladder.imageUrl}" alt="${ladder.name}">
-                            <a href="${ladder.linkUrl}" target="_blank" class="button_ladders">${ladder.name}</a>
-                            <div class="height">${ladder.specs}</div>
-                            <hr class="line">
-                            <p>${ladder.description}</p>
-                        </div>`;
-                    });
-                    result += '</div>';
-                } else {
-                    result = '<div class="contact"><p><strong>No suitable standard ladders for the given height.<br><br>Please contact us further for advice.</strong></p></div>';
-                }
-            }
+    // Fetch data from CSV file
+    fetch(csvFilePath)
+      .then(response => response.text())
+      .then(data => {
+        const rows = data.split('\n').slice(1); // Skip header row
+        const dataArray = rows.map(row => row.split(','));
 
-            const container = document.getElementById('result-container');
-            // Remove result element
-            container.innerHTML = '';
-            // Create a new result element
-            const newResultElement = document.createElement('div');
-            newResultElement.setAttribute('class', 'result');
-            newResultElement.setAttribute('id', 'result');
-            newResultElement.innerHTML = result;
-            container.appendChild(newResultElement);
+        // Your search logic here
+        const searchInput = document.getElementById('searchInput');
+        const searchResultsContainer = document.getElementById('searchResults');
+
+        searchInput.addEventListener('input', function () {
+          const searchTerm = this.value.toLowerCase();
+          const searchResults = dataArray.filter(row =>
+            row.some(col => col.toLowerCase().includes(searchTerm))
+          );
+
+          searchResultsContainer.innerHTML = '';
+
+          const dropdownContent = document.createElement('div');
+          dropdownContent.classList.add('dropdown-content');
+
+          searchResults.forEach((result, index) => {
+            const listItem = document.createElement('a');
+            listItem.textContent = result[0]; // Assuming the first column is the Name
+            listItem.tabIndex = index + 2; // Set tabindex for tab navigation
+            listItem.setAttribute('role', 'option'); // Set ARIA role
+
+            listItem.addEventListener('click', function () {
+              // Populate the form fields
+              populateForm(result);
+              dropdownContent.style.display = 'none'; // Hide dropdown after selection
+            });
+
+            listItem.addEventListener('keydown', function (event) {
+              if (event.key === 'Enter') {
+                // Populate the form fields
+                populateForm(result);
+                dropdownContent.style.display = 'none'; // Hide dropdown after selection
+              } else if (event.key === 'Tab') {
+                event.preventDefault();
+                const nextIndex = (index + 1) % searchResults.length;
+                searchResultsContainer.querySelectorAll('a')[nextIndex].focus();
+              } else if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                const prevIndex = (index - 1 + searchResults.length) % searchResults.length;
+                searchResultsContainer.querySelectorAll('a')[prevIndex].focus();
+              } else if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                const nextIndex = (index + 1) % searchResults.length;
+                searchResultsContainer.querySelectorAll('a')[nextIndex].focus();
+              }
+            });
+
+            dropdownContent.appendChild(listItem);
+          });
+
+          searchResultsContainer.appendChild(dropdownContent);
+          dropdownContent.style.display = 'block';
+        });
+      });
+
+    // Function to collapse menu when clicking outside
+    document.body.addEventListener('click', function(event) {
+      const searchInput = document.getElementById('searchInput');
+      const searchResults = document.getElementById('searchResults');
+      if (event.target !== searchInput && event.target !== searchResults) {
+        const dropdownContent = document.querySelector('.dropdown-content');
+        if (dropdownContent) {
+          dropdownContent.style.display = 'none';
         }
+      }
+    });
 
-        function handleKeyDown(event) {
-            if (event.key === 'Enter') {
-                chooseLadder();
-            }
-        }
-    </script>
+    function populateForm(result) {
+      document.getElementById('name').value = result[0];
+      const street = result[1] || '';
+      const suburb = result[2] || '';
+      const city = result[3] || '';
+      const addressValue = suburb ? `${street}\n${suburb}\n${city}` : `${street}\n${city}`;
+      document.getElementById('address').value = addressValue;
+      document.getElementById('phone').value = result[4] || '';
+      document.getElementById('notes').value = result[5] || '';
+    }
+
+    function printContent() {
+  var nameContent = document.getElementById("name").value.toUpperCase();
+  var addressContent = document.getElementById("address").value.toUpperCase();
+  var phoneContent = formatPhoneNumber(document.getElementById("phone").value.toUpperCase().replace(/[ -]/g, ''));
+  var notesContent = document.getElementById("notes").value; // Do not change the case
+  var itemsValue = parseInt(document.getElementById("items").value);
+  var showDateCheckbox = document.getElementById("showDate");
+  var currentDate = new Date().toLocaleDateString('en-NZ');
+
+  var printWindow = window.open('', '_blank');
+  printWindow.document.write('<html><head><title>Printable Content</title><style>');
+  printWindow.document.write('body { font-family: "Arial Narrow", "Arial", sans-serif; margin: 0; padding: 0; }');
+  printWindow.document.write('@media print { body { font-family: "Arial Narrow", "Arial", sans-serif; } }');
+  printWindow.document.write('.content-container { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; font-size: 28px; margin: 0 auto; max-width: 600px; height: 100vh; }');
+  printWindow.document.write('.content-container p { margin: 0; }');
+  printWindow.document.write('.content-container .category { margin: 5px 0; }'); // Reduced space between fields to 5px
+  printWindow.document.write('.notes { font-size: 12pt; }');
+  printWindow.document.write('.contact { font-size: 20px; }');
+  printWindow.document.write('.label { page-break-after: always; }'); // Ensure page breaks between labels
+  printWindow.document.write('.line { border-top: 1px solid black; width: 90%; margin: 0 auto; }'); // Define the line style
+  printWindow.document.write('#dateDisplay { font-size: 10pt; position: fixed; bottom: 0px; left: 0px; }'); // Date display style
+  printWindow.document.write('@media print { .label { page-break-after: always; } }'); // Force page break after each label
+  printWindow.document.write('</style></head><body>');
+
+  if (showDateCheckbox.checked) {
+    printWindow.document.write('<div id="dateDisplay">' + currentDate + '</div>');
+  }
+
+  for (let i = 1; i <= itemsValue; i++) {
+    printWindow.document.write('<div class="content-container label">');
+    printWindow.document.write('<p class="category"><strong>' + nameContent + '</strong></p>');
+    printWindow.document.write('<div class="line"></div>'); // Add the line between name and address
+    printWindow.document.write('<div class="category"><strong>' + addressContent.replace(/\n/g, '<br>') + '</strong></div>');
+    printWindow.document.write('<div class="line"></div>');
+    printWindow.document.write('<p class="category contact">' + phoneContent + '</p>');
+    printWindow.document.write('<p class="category notes"><em>' + notesContent + '</em></p>');
+    if (itemsValue > 1) {
+      printWindow.document.write('<p class="category" style="font-size: 12pt; font-style: italic;"><strong>' + i + ' of ' + itemsValue + '</strong></p>');
+    }
+    printWindow.document.write('</div>');
+  }
+
+  printWindow.document.write('</body></html>');
+  printWindow.document.close();
+
+  printWindow.onload = function () {
+    printWindow.print();
+  };
+}
+
+    function formatPhoneNumber(phoneNumber) {
+      phoneNumber = phoneNumber.replace(/^\+64/, '0');
+
+      var mobilePattern = /^(021|022|027|029)(\d{3}|\d{4})(\d{4}|\d{3})$/;
+      var landlinePattern = /^(?!08)(0[3-9])(\d{3}|\d{4})(\d{4}|\d{3})$/;
+      var tollFreePattern = /^(0800)(\d{3}|\d{4})(\d{4}|\d{3})$/;
+
+      if (mobilePattern.test(phoneNumber)) {
+        return phoneNumber.replace(/^(021|022|027|029)(\d{3}|\d{4})(\d{4}|\d{3})$/, '$1 $2 $3');
+      } else if (landlinePattern.test(phoneNumber)) {
+        return phoneNumber.replace(/^(?!08)(0[3-9])(\d{3}|\d{4})(\d{4}|\d{3})$/, '$1 $2 $3');
+      } else if (tollFreePattern.test(phoneNumber)) {
+        return phoneNumber.replace(/^(0800)(\d{3}|\d{4})(\d{4}|\d{3})$/, '$1 $2 $3');
+      } else {
+        return phoneNumber;
+      }
+    }
+  </script>
 </body>
 </html>
