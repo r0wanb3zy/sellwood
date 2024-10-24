@@ -130,7 +130,7 @@ function calculateTreads() {
 
     // Validate top gap
     if (topGap < minTopGap) {
-        document.getElementById('error').textContent = `Top gap must be at least ${minTopGap}mm.`;
+        document.getElementById('error').textContent = `Top gap must be at least ${minTopGap}`;
         return;
     }
 
@@ -142,11 +142,11 @@ function calculateTreads() {
 
         // Additional validation for ladder height when bottom gap is 0
         if (ladderHeight < minValidHeightForZeroBottom || ladderHeight > maxLadderHeight) {
-            document.getElementById('error').textContent = `When the bottom gap is set to 0, ladder height must be between ${minValidHeightForZeroBottom}mm and ${maxLadderHeight}mm.`;
+            document.getElementById('error').textContent = `When the bottom gap is set to 0, ladder height must be between ${minValidHeightForZeroBottom}mm and ${maxLadderHeight}`;
             return;
         }
     } else if (bottomGap < minBottomGap) {
-        document.getElementById('error').textContent = `Bottom gap must be at least ${minBottomGap}mm.`;
+        document.getElementById('error').textContent = `Bottom gap must be at least ${minBottomGap}`;
         return;
     }
 
@@ -180,7 +180,7 @@ function calculateTreads() {
         let runningMeasurements = [];
         for (let i = 0; i < treads; i++) {
             let position = topGap + i * spacing;
-            runningMeasurements.push(`${i + 1}) ${Math.round(position)}mm`);
+            runningMeasurements.push(`${i + 1}) ${Math.round(position)}`);
         }
 
 const timestamp = new Date();
@@ -202,7 +202,7 @@ Ladder height: ${ladderHeight}<br>
 Ladder angle: 90°<br>
 ----------------------------------------<br>
 Stringer: ${ladderHeight}<br>
-Treads: ${treads} @ ${spacing.toFixed(2)}mm<br>
+Treads: ${treads} @ ${spacing.toFixed(2)}<br>
 Gap top: ${topGap}<br>
 Gap bottom: ${bottomGap}<br>
 ----------------------------------------<br>
