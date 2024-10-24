@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ladder Tread Calculator</title>
+    <style>
+        /* Your existing CSS styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        #container {
+            max-width: 300px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            text-align: center;
+            margin: 10px auto;
+            /* Center horizontally with top margin */
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        input[type="text"].error {
+            border: 1px solid red;
+        }
+
+        input[type="text"]::placeholder {
+            color: #ccc;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #ED1C24;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #c70014;
+        }
+
+        #output {
+            margin-top: -5px;
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-bottom: 5px;
+            text-align: center;
+            /* Center-align the output text */
+        }
+
+        #error {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="container">
+        <!-- Job Name Input Field -->
+        <input type="text" id="jobName" placeholder="Job Name" required><br>
+
+        <input type="text" id="ladderHeight" placeholder="Ladder Height (mm)" required><br>
+
+        <input type="text" id="topGap" value="30" placeholder="Gap Top" required><br>
+
+        <input type="text" id="bottomGap" value="65" placeholder="Gap Bottom"><br>
+
+        <button id="calculateButton" onclick="calculateTreads()">Calculate</button>
+
+        <div id="error"></div>
+        <div id="output"></div>
+        <!-- Print button will appear after calculation -->
+        <button id="Button" style="display: none;" onclick="printOutput()">Print</button>
+    </div>
+
+    <script>
+        // Function to handle the calculation of treads
+function calculateTreads() {
+    const jobName = document.getElementById('jobName').value;
+    const ladderHeight = parseInt(document.getElementById('ladderHeight').value);
+    let topGap = parseInt(document.getElementById('topGap').value);
+    let bottomGap = document.getElementById('bottomGap').value === '' ? null : parseInt(document.getElementById('bottomGap').value);
+    const minTopGap = 30;
+    const minBottomGap = 65;
+    const minSpacing = 250;
+    const maxSpacing = 300;
+    const maxLadderHeight = 6000; // Maximum ladder height
+    const minLadderHeight = 345;   // Minimum ladder height
+    const minValidHeightForZeroBottom = 530; // Minimum height if bottom gap is 0
+
+    // Clear previous error message
+    document.getElementById('error').textContent = '';
+    document.getElementById('output').textContent = '';
+
+    // Validate job name and mark the field with a red border if empty
+    const jobNameField = document.getElementById('jobName');
+    if (!jobName) {
+        jobNameField.classList.add('error'); // Add error class to change the border color
+        return;
+    } else {
+        jobNameField.classList.remove('error'); // Remove the error class if the input is valid
+    }
+
+    // Validate ladder height
+    if (!ladderHeight || ladderHeight < minLadderHeight || ladderHeight > maxLadderHeight) {
+        document.getElementById('error').textContent = `Ladder height is required and must be between ${minLadderHeight}mm and ${maxLadderHeight}mm.`;
+        return;
+    }
+
+    // Validate top gap
+    if (topGap < minTopGap) {
+        document.getElementById('error').textContent = `Top gap must be at least ${minTopGap}mm.`;
+        return;
+    }
+
+    // Handle blank or zero bottom gap condition
+    let adjustTreads = false; // Flag to track if we need to reduce treads
+    if (bottomGap === null || bottomGap === 0) {
+        bottomGap = 0; // Set bottom gap to 0 for calculation
+        adjustTreads = true; // Mark that we will reduce the tread count by 1
+
+        // Additional validation for ladder height when bottom gap is 0
+        if (ladderHeight < minValidHeightForZeroBottom || ladderHeight > maxLadderHeight) {
+            document.getElementById('error').textContent = `When the bottom gap is set to 0, ladder height must be between ${minValidHeightForZeroBottom}mm and ${maxLadderHeight}mm.`;
+            return;
+        }
+    } else if (bottomGap < minBottomGap) {
+        document.getElementById('error').textContent = `Bottom gap must be at least ${minBottomGap}mm.`;
+        return;
+    }
+
+    if (ladderHeight < topGap + bottomGap) {
+        document.getElementById('error').textContent = 'Ladder height is too short for the required gaps.';
+        return;
+    }
+
+    // Calculate usable height
+    let usableHeight = ladderHeight - topGap - bottomGap;
+    let treads = Math.floor(usableHeight / minSpacing) + 1;
+    let spacing = usableHeight / (treads - 1);
+
+    // Adjust top gap dynamically if spacing is outside of the range
+    while ((spacing < minSpacing || spacing > maxSpacing) && (topGap + bottomGap) < ladderHeight) {
+        topGap += 1; // Increment top gap to adjust
+        usableHeight = ladderHeight - topGap - bottomGap;
+        treads = Math.floor(usableHeight / minSpacing) + 1;
+        spacing = usableHeight / (treads - 1);
+    }
+
+    if (spacing < minSpacing || spacing > maxSpacing || topGap + bottomGap >= ladderHeight) {
+        document.getElementById('error').textContent = 'No valid tread arrangement within the spacing limits and gap constraints.';
+    } else {
+        // Reduce the tread count by 1 if bottom gap is zero or blank
+        if (adjustTreads) {
+            treads -= 1; // Reduce tread count by 1
+        }
+
+        // Calculate the running measurements for each tread
+        let runningMeasurements = [];
+        for (let i = 0; i < treads; i++) {
+            let position = topGap + i * spacing;
+            runningMeasurements.push(`${i + 1}) ${Math.round(position)}mm`);
+        }
+
+        const timestamp = new Date().toLocaleString('en-GB', { hour12: true });
+
+        document.getElementById('output').innerHTML = `
+Timestamp: ${timestamp}<br>
+Job name: ${jobName}<br>
+----------------------------------------<br>
+Ladder type: Vertical ladder <br>
+Ladder height: ${ladderHeight}<br>
+Ladder angle: 90°<br>
+----------------------------------------<br>
+Stringer: ${ladderHeight}<br>
+Treads: ${treads} @ ${spacing.toFixed(2)}mm<br>
+Gap top: ${topGap}<br>
+Gap bottom: ${bottomGap}<br>
+----------------------------------------<br>
+${runningMeasurements.join('<br>')}
+        `;
+
+        // Show the print button after the calculation
+        document.getElementById('Button').style.display = 'block';
+    }
+}
+
+
+// Function to print the output
+function printOutput() {
+    var jobName = document.getElementById('jobName').value; // Get Job Name
+    var outputDiv = document.getElementById("output");
+    var printWindow = window.open('', '', 'width=600,height=400');
+    printWindow.document.open();
+    printWindow.document.write('<html><head><title>Print</title></head><body>');
+    printWindow.document.write('<h1>Vertical Ladder</h1>');
+    printWindow.document.write('<h2>Job Name: ' + jobName + '</h2>');
+    printWindow.document.write(outputDiv.innerHTML);
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    printWindow.print();
+}
+
+// Add event listener to input fields to allow Enter key to trigger calculation
+document.querySelectorAll('input').forEach(input => {
+    input.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault(); // Prevent form submission if applicable
+            calculateTreads(); // Trigger the calculation
+        }
+    });
+});
+    </script>
+
+</body>
+
+</html>
