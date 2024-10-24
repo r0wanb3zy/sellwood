@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,8 +19,7 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             padding: 20px;
             text-align: center;
-            margin: 10px auto;
-            /* Center horizontally with top margin */
+            margin: 10px auto; /* Center horizontally with top margin */
         }
 
         input[type="text"] {
@@ -67,8 +65,7 @@
             border-radius: 5px;
             font-size: 16px;
             margin-bottom: 5px;
-            text-align: center;
-            /* Center-align the output text */
+            text-align: center; /* Center-align the output text */
         }
 
         #error {
@@ -77,29 +74,28 @@
         }
     </style>
 </head>
-
 <body>
 
-    <div id="container">
-        <!-- Job Name Input Field -->
-        <input type="text" id="jobName" placeholder="Job Name" required><br>
+<div id="container">
+    <!-- Job Name Input Field -->
+    <input type="text" id="jobName" placeholder="Job Name" required><br>
 
-        <input type="text" id="ladderHeight" placeholder="Ladder Height (mm)" required><br>
+    <input type="text" id="ladderHeight" placeholder="Ladder Height (mm)" required><br>
 
-        <input type="text" id="topGap" value="30" placeholder="Gap Top" required><br>
+    <input type="text" id="topGap" value="30" placeholder="Gap Top" required><br>
 
-        <input type="text" id="bottomGap" value="65" placeholder="Gap Bottom"><br>
+    <input type="text" id="bottomGap" value="65" placeholder="Gap Bottom"><br>
 
-        <button id="calculateButton" onclick="calculateTreads()">Calculate</button>
+    <button id="calculateButton" onclick="calculateTreads()">Calculate</button>
 
-        <div id="error"></div>
-        <div id="output"></div>
-        <!-- Print button will appear after calculation -->
-        <button id="Button" style="display: none;" onclick="printOutput()">Print</button>
-    </div>
+    <div id="error"></div>
+    <div id="output"></div>
+    <!-- Print button will appear after calculation -->
+    <button id="Button" style="display: none;" onclick="printOutput()">Print</button>
+</div>
 
-    <script>
-        // Function to handle the calculation of treads
+<script>
+// Function to handle the calculation of treads
 function calculateTreads() {
     const jobName = document.getElementById('jobName').value;
     const ladderHeight = parseInt(document.getElementById('ladderHeight').value);
@@ -187,10 +183,18 @@ function calculateTreads() {
             runningMeasurements.push(`${i + 1}) ${Math.round(position)}mm`);
         }
 
-        const timestamp = new Date().toLocaleString('en-GB', { hour12: true });
+const timestamp = new Date();
+const formattedTimestamp = `${timestamp.getDate().toString().padStart(2, '0')}/${
+    (timestamp.getMonth() + 1).toString().padStart(2, '0')
+}/${timestamp.getFullYear().toString().slice(-2)} ${
+    timestamp.getHours() % 12 || 12
+}:${timestamp.getMinutes().toString().padStart(2, '0')} ${
+    timestamp.getHours() >= 12 ? 'pm' : 'am'
+}`;
 
-        document.getElementById('output').innerHTML = `
-Timestamp: ${timestamp}<br>
+// Use formattedTimestamp in the output
+document.getElementById('output').innerHTML = `
+Timestamp: ${formattedTimestamp}<br>
 Job name: ${jobName}<br>
 ----------------------------------------<br>
 Ladder type: Vertical ladder <br>
@@ -203,7 +207,7 @@ Gap top: ${topGap}<br>
 Gap bottom: ${bottomGap}<br>
 ----------------------------------------<br>
 ${runningMeasurements.join('<br>')}
-        `;
+`;
 
         // Show the print button after the calculation
         document.getElementById('Button').style.display = 'block';
@@ -235,8 +239,7 @@ document.querySelectorAll('input').forEach(input => {
         }
     });
 });
-    </script>
+</script>
 
 </body>
-
 </html>
