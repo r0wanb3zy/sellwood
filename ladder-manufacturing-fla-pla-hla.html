@@ -140,7 +140,8 @@
     var handrails;
     var ladderTypeText;
     // Function to calculate ladder measurements and display output
-   function calculate() {
+   // Function to calculate ladder measurements and display output
+function calculate() {
     var customerInput = document.getElementById("customerInput");
     var ladderHeightInput = document.getElementById("ladderHeightInput");
     var printButton = document.getElementById("printButton");
@@ -172,15 +173,9 @@
         return;
     }
 
-    // Common height validation for Fixed and Hook ladders
-    if ((ladderType.toLowerCase() === 'f' || ladderType.toLowerCase() === 'h') && (ladderHeight < 500 || ladderHeight > 5500)) {
-        alert('Ladder height should be between 500mm and 5500mm for fixed ladder or hook ladder.');
-        return;
-    }
-
-    // Specific validation for Pivotal ladders
-    if (ladderType.toLowerCase() === 'p' && (ladderHeight < 500 || ladderHeight > 5500)) {
-        alert('Ladder height should be between 500mm and 5500mm for pivotal ladder.');
+    // Common height validation for Fixed, Hook, and Pivotal ladders
+    if (ladderHeight < 500 || ladderHeight > 5500) {
+        alert('Ladder height should be between 500mm and 5500mm for fixed, pivotal, or hook ladders.');
         return;
     }
 
