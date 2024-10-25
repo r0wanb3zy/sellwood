@@ -78,15 +78,15 @@
       background-color: #c70014;
     }
 
-        #output {
-            margin-top: 5px;
-            background-color: #f9f9f9;
-            padding: 20px;
-            border-radius: 5px;
-            font-size: 16px;
-            margin-bottom: 5px;
-            text-align: center; /* Center-align the output text */
-        }
+    #output {
+      margin-top: 5px;
+      background-color: #f9f9f9;
+      padding: 20px;
+      border-radius: 5px;
+      font-size: 16px;
+      margin-bottom: 5px;
+      text-align: center; /* Center-align the output text */
+    }
 
     #printButton {
       display: none;
@@ -116,6 +116,7 @@
       <select id="ladderType">
         <option value="f">Fixed Ladder</option>
         <option value="p">Pivotal Ladder</option>
+        <option value="h">Hook Ladder</option>
       </select>
 
       <select id="handrailsObstructed">
@@ -164,7 +165,7 @@
 
       ladderType = document.getElementById("ladderType").value;
       ladderHeight = parseFloat(ladderHeight);
-      if ((ladderType.toLowerCase() !== 'f' && ladderType.toLowerCase() !== 'p') || isNaN(ladderHeight)) {
+      if ((ladderType.toLowerCase() !== 'f' && ladderType.toLowerCase() !== 'p' && ladderType.toLowerCase() !== 'h') || isNaN(ladderHeight)) {
         alert('Please select a valid ladder type and provide a valid number for ladder height.');
         return;
       }
@@ -185,11 +186,17 @@
       displayOutput('Timestamp: ' + getCurrentTimestamp());
       displayOutput('Job name: ' + customer); // Display customer name
       displayOutput('----------------------------------------');
+      
+      // Adjusted ladder type handling
       if (ladderType.toLowerCase() === 'f') {
         displayOutput('Ladder type: Fixed ladder');
       } else if (ladderType.toLowerCase() === 'p') {
         displayOutput('Ladder type: Pivotal ladder');
+      } else if (ladderType.toLowerCase() === 'h') {
+        displayOutput('Ladder type: Hook ladder'); // Display as Hook Ladder
+        ladderType = 'f'; // Treat as Fixed Ladder for calculations
       }
+      
       displayOutput('Ladder height: ' + Math.round(ladderHeight));
       displayOutput('Ladder length: ' + Math.round(ladderLength));
       displayOutput('Landing space: ' + Math.round(landingSpace + 106));
@@ -298,26 +305,31 @@
     Math.radians = function(degrees) {
       return degrees * Math.PI / 180;
     };
-    // Function to print the output
-    function printOutput() {
-      var ladderTypeText;
-      if (ladderType.toLowerCase() === 'f') {
-        ladderTypeText = 'Fixed Ladder';
-      } else if (ladderType.toLowerCase() === 'p') {
-        ladderTypeText = 'Pivotal Ladder';
-      }
-      var customer = document.getElementById("customerInput").value.trim(); // Get customer name
-      var outputDiv = document.getElementById("output");
-      var printWindow = window.open('', '', 'width=600,height=400');
-      printWindow.document.open();
-      printWindow.document.write('<html><head><title>Print</title></head><body>');
-      printWindow.document.write('<h1>' + ladderTypeText + '</h1>');
-      printWindow.document.write('<h2>Job: ' + customer + '</h2>');
-      printWindow.document.write(outputDiv.innerHTML);
-      printWindow.document.write('</body></html>');
-      printWindow.document.close();
-      printWindow.print();
-    }
+function printOutput() {
+  // Reassign the ladderTypeText based on the current ladderType
+  ladderType = document.getElementById("ladderType").value; // Get the current ladder type from the dropdown
+  var ladderTypeText;
+  
+  if (ladderType.toLowerCase() === 'f') {
+    ladderTypeText = 'Fixed Ladder';
+  } else if (ladderType.toLowerCase() === 'p') {
+    ladderTypeText = 'Pivotal Ladder';
+  } else if (ladderType.toLowerCase() === 'h') {
+    ladderTypeText = 'Hook Ladder';
+  }
+  
+  var customer = document.getElementById("customerInput").value.trim(); // Get customer name
+  var outputDiv = document.getElementById("output");
+  var printWindow = window.open('', '', 'width=600,height=400');
+  printWindow.document.open();
+  printWindow.document.write('<html><head><title>Print</title></head><body>');
+  printWindow.document.write('<h1>' + ladderTypeText + '</h1>'); // Correctly display the ladder type
+  printWindow.document.write('<h2>Job: ' + customer + '</h2>');
+  printWindow.document.write(outputDiv.innerHTML);
+  printWindow.document.write('</body></html>');
+  printWindow.document.close();
+  printWindow.print();
+}
     // Function to handle key press events
     function handleKeyPress(event) {
       if (event.keyCode === 13) { // Check if the pressed key is Enter (key code 13)
