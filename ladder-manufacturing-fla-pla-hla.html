@@ -140,90 +140,80 @@
     var handrails;
     var ladderTypeText;
     // Function to calculate ladder measurements and display output
-   // Function to calculate ladder measurements and display output
-function calculate() {
-    var customerInput = document.getElementById("customerInput");
-    var ladderHeightInput = document.getElementById("ladderHeightInput");
-    var printButton = document.getElementById("printButton");
+    function calculate() {
+      var customerInput = document.getElementById("customerInput");
+      var ladderHeightInput = document.getElementById("ladderHeightInput");
+      var printButton = document.getElementById("printButton");
 
-    // Remove error class if present
-    customerInput.classList.remove("error");
-    ladderHeightInput.classList.remove("error");
+      // Remove error class if present
+      customerInput.classList.remove("error");
+      ladderHeightInput.classList.remove("error");
 
-    var customer = customerInput.value.trim();
-    ladderHeight = ladderHeightInput.value.trim();
+      var customer = customerInput.value.trim();
+      ladderHeight = ladderHeightInput.value.trim();
 
-    if (customer === '') {
+      if (customer === '') {
         customerInput.classList.add("error");
         return;
-    }
-    if (ladderHeight === '') {
+      }
+      if (ladderHeight === '') {
         ladderHeightInput.classList.add("error");
         return;
-    }
+      }
 
-    printButton.style.display = "block"; // Show the print button
+      printButton.style.display = "block"; // Show the print button
 
-    ladderType = document.getElementById("ladderType").value;
-    ladderHeight = parseFloat(ladderHeight);
-    
-    // Validate ladder type and height
-    if ((ladderType.toLowerCase() !== 'f' && ladderType.toLowerCase() !== 'h' && ladderType.toLowerCase() !== 'p') || isNaN(ladderHeight)) {
-        alert('Please select a valid ladder type (Fixed, Pivotal, or Hook) and provide a valid number for ladder height.');
+      ladderType = document.getElementById("ladderType").value;
+      ladderHeight = parseFloat(ladderHeight);
+      if ((ladderType.toLowerCase() !== 'f' && ladderType.toLowerCase() !== 'p' && ladderType.toLowerCase() !== 'h') || isNaN(ladderHeight)) {
+        alert('Please select a valid ladder type and provide a valid number for ladder height.');
         return;
-    }
-
-    // Common height validation for Fixed, Hook, and Pivotal ladders
-    if (ladderHeight < 500 || ladderHeight > 5500) {
-        alert('Ladder height should be between 500mm and 5500mm for fixed, pivotal, or hook ladders.');
-        return;
-    }
-
-    handrails = document.getElementById("handrailsObstructed").value;
-    if (ladderHeight >= 2000 && (handrails !== 'y' && handrails !== 'n')) {
+      }
+if ((ladderType.toLowerCase() === 'f' || ladderType.toLowerCase() === 'h' || ladderType.toLowerCase() === 'p') && 
+    (ladderHeight < 500 || ladderHeight > 5500)) {
+    alert('Ladder height should be between 500mm and 5500mm for fixed ladder (f), pivotal ladder (p), or hook ladder (h).');
+    return;
+}
+      handrails = document.getElementById("handrailsObstructed").value;
+      if (ladderHeight >= 2000 && (handrails !== 'y' && handrails !== 'n')) {
         alert('Please select "Yes" or "No" for handrails obstructed.');
         return;
-    }
-
-    ladderLength = Math.round(ladderHeight / Math.sin(Math.radians(70)));
-    landingSpace = Math.round(ladderHeight / Math.tan(Math.radians(70)));
-    var outputDiv = document.getElementById("output");
-    outputDiv.innerHTML = ''; // Clear the previous output
-    displayOutput('Timestamp: ' + getCurrentTimestamp());
-    displayOutput('Job name: ' + customer); // Display customer name
-    displayOutput('----------------------------------------');
-
-    // Adjusted ladder type handling
-    if (ladderType.toLowerCase() === 'f' || ladderType.toLowerCase() === 'h') {
-        displayOutput('Ladder type: Fixed ladder'); // Display Hook Ladder as Fixed Ladder
-        ladderType = 'f'; // Treat Hook Ladder as Fixed Ladder for calculations
-    } else if (ladderType.toLowerCase() === 'p') {
+      }
+      ladderLength = Math.round(ladderHeight / Math.sin(Math.radians(70)));
+      landingSpace = Math.round(ladderHeight / Math.tan(Math.radians(70)));
+      var outputDiv = document.getElementById("output");
+      outputDiv.innerHTML = ''; // Clear the previous output
+      displayOutput('Timestamp: ' + getCurrentTimestamp());
+      displayOutput('Job name: ' + customer); // Display customer name
+      displayOutput('----------------------------------------');
+      
+      // Adjusted ladder type handling
+      if (ladderType.toLowerCase() === 'f') {
+        displayOutput('Ladder type: Fixed ladder');
+      } else if (ladderType.toLowerCase() === 'p') {
         displayOutput('Ladder type: Pivotal ladder');
-    }
-
-    displayOutput('Ladder height: ' + Math.round(ladderHeight));
-    displayOutput('Ladder length: ' + Math.round(ladderLength));
-    displayOutput('Landing space: ' + Math.round(landingSpace + 106));
-    
-    if (ladderType.toLowerCase() === 'p') {
+      } else if (ladderType.toLowerCase() === 'h') {
+        displayOutput('Ladder type: Hook ladder'); // Display as Hook Ladder
+        ladderType = 'f'; // Treat as Fixed Ladder for calculations
+      }
+      
+      displayOutput('Ladder height: ' + Math.round(ladderHeight));
+      displayOutput('Ladder length: ' + Math.round(ladderLength));
+      displayOutput('Landing space: ' + Math.round(landingSpace + 106));
+      if (ladderType.toLowerCase() === 'p') {
         displayOutput('Stored height: ' + Math.round(ladderLength + 36));
-    }
-
-    displayOutput('Ladder angle: 70°');
-    displayOutput('----------------------------------------');
-    
-    // Call manufacturing functions based on ladder type
-    if (ladderType.toLowerCase() === 'f') {
+      }
+      displayOutput('Ladder angle: 70°');
+      displayOutput('----------------------------------------');
+      if (ladderType.toLowerCase() === 'f') {
         manufacturing();
-    } else if (ladderType.toLowerCase() === 'p') {
+      } else if (ladderType.toLowerCase() === 'p') {
         manufacturing();
         manufacturing_pivotal();
+      }
+      displayOutput('----------------------------------------');
+      treadSpacing();
     }
-
-    displayOutput('----------------------------------------');
-    treadSpacing();
-}
-
     // Function to calculate manufacturing details for fixed ladder
     function manufacturing() {
       if (!ladderType || isNaN(ladderHeight) || isNaN(ladderLength)) {
