@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,7 +20,8 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             padding: 20px;
             text-align: center;
-            margin: 10px auto; /* Center horizontally with top margin */
+            margin: 10px auto;
+            /* Center horizontally with top margin */
         }
 
         input[type="text"] {
@@ -38,6 +40,21 @@
         }
 
         input[type="text"]::placeholder {
+            color: #ccc;
+        }
+
+        .input-group {
+            position: relative;
+            display: flex;
+            align-items: center;
+            /* Center the label vertically with the input */
+        }
+
+        .input-label {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 14px;
             color: #ccc;
         }
 
@@ -65,7 +82,8 @@
             border-radius: 5px;
             font-size: 16px;
             margin-bottom: 5px;
-            text-align: center; /* Center-align the output text */
+            text-align: center;
+            /* Center-align the output text */
         }
 
         #error {
@@ -74,156 +92,113 @@
         }
     </style>
 </head>
+
 <body>
 
-<div id="container">
-    <!-- Job Name Input Field -->
-    <input type="text" id="jobName" placeholder="Job Name" required><br>
+    <div id="container">
+        <input type="text" id="jobName" placeholder="Job Name" required><br>
+        <input type="text" id="ladderHeight" placeholder="Ladder Height (mm)" required><br>
+        <div class="input-group">
+            <input type="text" id="ladderAngle" placeholder="Ladder Angle" value="90" required>
+            <label for="ladderAngle" class="input-label">°</label>
+        </div>
+        <div class="input-group">
+            <input type="text" id="topGap" value="30" placeholder="Gap" required>
+            <label for="topGap" class="input-label">(Top)</label>
+        </div>
+        <div class="input-group">
+            <input type="text" id="bottomGap" value="65" placeholder="Gap">
+            <label for="bottomGap" class="input-label">(Bottom)</label>
+        </div>
+        <button id="calculateButton" onclick="calculateTreads()">Calculate</button>
+        <div id="error"></div>
+        <div id="output"></div>
+        <button id="Button" style="display: none;" onclick="printOutput()">Print</button>
+    </div>
 
-    <input type="text" id="ladderHeight" placeholder="Ladder Height (mm)" required><br>
-
-    <input type="text" id="topGap" value="30" placeholder="Gap Top" required><br>
-
-    <input type="text" id="bottomGap" value="65" placeholder="Gap Bottom"><br>
-
-    <button id="calculateButton" onclick="calculateTreads()">Calculate</button>
-
-    <div id="error"></div>
-    <div id="output"></div>
-    <!-- Print button will appear after calculation -->
-    <button id="Button" style="display: none;" onclick="printOutput()">Print</button>
-</div>
-
-<script>
-// Function to handle the calculation of treads
-function calculateTreads() {
+    <script>
+        function calculateTreads() {
     const jobName = document.getElementById('jobName').value;
     const ladderHeight = parseInt(document.getElementById('ladderHeight').value);
+    const ladderAngle = parseFloat(document.getElementById('ladderAngle').value);
+    const landingSpace = ladderHeight / Math.tan(ladderAngle * (Math.PI / 180));
     let topGap = parseInt(document.getElementById('topGap').value);
     let bottomGap = document.getElementById('bottomGap').value === '' ? null : parseInt(document.getElementById('bottomGap').value);
-    const minTopGap = 30;
-    const minBottomGap = 65;
-    const minSpacing = 250;
-    const maxSpacing = 300;
-    const maxLadderHeight = 6000; // Maximum ladder height
-    const minLadderHeight = 345;   // Minimum ladder height
-    const minValidHeightForZeroBottom = 530; // Minimum height if bottom gap is 0
 
-    // Clear previous error message
+    const minTopGap = 30, minBottomGap = 65, minSpacing = 250, maxSpacing = 300;
+    const maxLadderHeight = 6000, minLadderHeight = 345, minValidHeightForZeroBottom = 530;
+
     document.getElementById('error').textContent = '';
     document.getElementById('output').textContent = '';
-
-    // Validate job name and mark the field with a red border if empty
     const jobNameField = document.getElementById('jobName');
-    if (!jobName) {
-        jobNameField.classList.add('error'); // Add error class to change the border color
-        return;
-    } else {
-        jobNameField.classList.remove('error'); // Remove the error class if the input is valid
-    }
 
-    // Validate ladder height
+    if (!jobName) { jobNameField.classList.add('error'); return; } else { jobNameField.classList.remove('error'); }
     if (!ladderHeight || ladderHeight < minLadderHeight || ladderHeight > maxLadderHeight) {
-        document.getElementById('error').textContent = `Ladder height is required and must be between ${minLadderHeight}mm and ${maxLadderHeight}mm.`;
-        return;
+        document.getElementById('error').textContent = `Ladder height is required and must be between ${minLadderHeight}mm and ${maxLadderHeight}mm.`; return;
+    }
+    if (ladderAngle < 70 || ladderAngle > 90) {
+        document.getElementById('error').textContent = `Ladder angle must be between 70° and 90°.`; return;
     }
 
-    // Validate top gap
-    if (topGap < minTopGap) {
-        document.getElementById('error').textContent = `Top gap must be at least ${minTopGap}`;
-        return;
-    }
-
-    // Handle blank or zero bottom gap condition
-    let adjustTreads = false; // Flag to track if we need to reduce treads
-    if (bottomGap === null || bottomGap === 0) {
-        bottomGap = 0; // Set bottom gap to 0 for calculation
-        adjustTreads = true; // Mark that we will reduce the tread count by 1
-
-        // Additional validation for ladder height when bottom gap is 0
-        if (ladderHeight < minValidHeightForZeroBottom || ladderHeight > maxLadderHeight) {
-            document.getElementById('error').textContent = `When the bottom gap is set to 0, ladder height must be between ${minValidHeightForZeroBottom}mm and ${maxLadderHeight}`;
-            return;
-        }
-    } else if (bottomGap < minBottomGap) {
-        document.getElementById('error').textContent = `Bottom gap must be at least ${minBottomGap}`;
-        return;
-    }
-
-    if (ladderHeight < topGap + bottomGap) {
-        document.getElementById('error').textContent = 'Ladder height is too short for the required gaps.';
-        return;
-    }
-
-    // Calculate usable height
-    let usableHeight = ladderHeight - topGap - bottomGap;
+    const ladderLength = ladderHeight / Math.cos((90 - ladderAngle) * Math.PI / 180);
+    let usableHeight = ladderLength - topGap - (bottomGap ?? 0);
     let treads = Math.floor(usableHeight / minSpacing) + 1;
     let spacing = usableHeight / (treads - 1);
 
-    // Adjust top gap dynamically if spacing is outside of the range
-    while ((spacing < minSpacing || spacing > maxSpacing) && (topGap + bottomGap) < ladderHeight) {
-        topGap += 1; // Increment top gap to adjust
-        usableHeight = ladderHeight - topGap - bottomGap;
+    while ((spacing < minSpacing || spacing > maxSpacing) && (topGap + (bottomGap ?? 0)) < ladderHeight) {
+        topGap += 1;
+        usableHeight = ladderLength - topGap - (bottomGap ?? 0);
         treads = Math.floor(usableHeight / minSpacing) + 1;
         spacing = usableHeight / (treads - 1);
     }
 
-    if (spacing < minSpacing || spacing > maxSpacing || topGap + bottomGap >= ladderHeight) {
-        document.getElementById('error').textContent = 'No valid tread arrangement within the spacing limits and gap constraints.';
+    if (spacing < minSpacing || spacing > maxSpacing || topGap + (bottomGap ?? 0) >= ladderLength) {
+        document.getElementById('error').textContent = 'No valid tread arrangement within spacing limits and gap constraints.';
     } else {
-        // Reduce the tread count by 1 if bottom gap is zero or blank
-        if (adjustTreads) {
-            treads -= 1; // Reduce tread count by 1
-        }
+        if (bottomGap === null || bottomGap === 0) { treads -= 1; }
 
-        // Calculate the running measurements for each tread
         let runningMeasurements = [];
         for (let i = 0; i < treads; i++) {
-            let position = topGap + i * spacing;
-            runningMeasurements.push(`${i + 1}) ${Math.round(position)}`);
+            runningMeasurements.push(`${i + 1}) ${Math.round(topGap + i * spacing)}`);
         }
 
-const timestamp = new Date();
-const formattedTimestamp = `${timestamp.getDate().toString().padStart(2, '0')}/${
-    (timestamp.getMonth() + 1).toString().padStart(2, '0')
-}/${timestamp.getFullYear().toString().slice(-2)} ${
-    timestamp.getHours() % 12 || 12
-}:${timestamp.getMinutes().toString().padStart(2, '0')} ${
-    timestamp.getHours() >= 12 ? 'pm' : 'am'
-}`;
+        const timestamp = new Date();
+        const formattedTimestamp = `${timestamp.getDate().toString().padStart(2, '0')}/${
+            (timestamp.getMonth() + 1).toString().padStart(2, '0')
+        }/${timestamp.getFullYear().toString().slice(-2)} ${
+            timestamp.getHours() % 12 || 12
+        }:${timestamp.getMinutes().toString().padStart(2, '0')} ${
+            timestamp.getHours() >= 12 ? 'pm' : 'am'
+        }`;
 
-// Use formattedTimestamp in the output
-document.getElementById('output').innerHTML = `
-Timestamp: ${formattedTimestamp}<br>
-Job name: ${jobName}<br>
-----------------------------------------<br>
-Ladder type: Vertical ladder <br>
-Ladder height: ${ladderHeight}<br>
-Ladder angle: 90°<br>
-----------------------------------------<br>
-Stringer: ${ladderHeight}<br>
-Treads: ${treads} @ ${spacing.toFixed(2)}<br>
-Gap top: ${topGap}<br>
-Gap bottom: ${bottomGap}<br>
-----------------------------------------<br>
-${runningMeasurements.join('<br>')}
-`;
-
-        // Show the print button after the calculation
+        document.getElementById('output').innerHTML = `
+        Timestamp: ${formattedTimestamp}<br>
+        Job name: ${jobName}<br>
+        ----------------------------------------<br>
+        Ladder type: Vertical ladder <br>
+        Ladder height: ${ladderHeight}<br>
+    Ladder Length: ${Math.round(ladderLength)}<br>
+    Landing space: ${Math.round(landingSpace)}<br>
+        Ladder angle: ${ladderAngle}°<br>
+        ----------------------------------------<br>
+        Stringer: ${Math.round(ladderLength)}<br>
+        Treads: ${treads} @ ${spacing.toFixed(1)}<br>
+        Gap top: ${topGap}<br>
+        Gap bottom: ${bottomGap ?? 0}<br>
+        ----------------------------------------<br>
+        ${runningMeasurements.join('<br>')}
+        `;
         document.getElementById('Button').style.display = 'block';
     }
 }
 
-
-// Function to print the output
 function printOutput() {
-    var jobName = document.getElementById('jobName').value; // Get Job Name
     var outputDiv = document.getElementById("output");
     var printWindow = window.open('', '', 'width=600,height=400');
     printWindow.document.open();
     printWindow.document.write('<html><head><title>Print</title></head><body>');
     printWindow.document.write('<h1>Vertical Ladder</h1>');
-    printWindow.document.write('<h2>Job Name: ' + jobName + '</h2>');
+    printWindow.document.write('<h2>Job Name: ' + document.getElementById('jobName').value + '</h2>');
     printWindow.document.write(outputDiv.innerHTML);
     printWindow.document.write('</body></html>');
     printWindow.document.close();
@@ -239,7 +214,8 @@ document.querySelectorAll('input').forEach(input => {
         }
     });
 });
-</script>
+    </script>
 
 </body>
+
 </html>
