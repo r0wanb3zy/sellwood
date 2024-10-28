@@ -121,7 +121,7 @@
     const jobName = document.getElementById('jobName').value;
     const ladderHeight = parseInt(document.getElementById('ladderHeight').value);
     const ladderAngle = parseFloat(document.getElementById('ladderAngle').value);
-    const landingSpace = ladderHeight / Math.tan(ladderAngle * (Math.PI / 180));
+    const landingSpace = (ladderHeight / Math.tan(ladderAngle * (Math.PI / 180))) + 160;
     let topGap = parseInt(document.getElementById('topGap').value);
     let bottomGap = document.getElementById('bottomGap').value === '' ? null : parseInt(document.getElementById('bottomGap').value);
 
@@ -182,7 +182,7 @@
         Ladder angle: ${ladderAngle}°<br>
         ----------------------------------------<br>
         Stringer: ${Math.round(ladderLength)}<br>
-        Treads: ${treads} @ ${spacing.toFixed(1)}<br>
+        Treads: ${treads} @ ${spacing.toFixed(2)}<br>
         Gap top: ${topGap}<br>
         Gap bottom: ${bottomGap ?? 0}<br>
         ----------------------------------------<br>
