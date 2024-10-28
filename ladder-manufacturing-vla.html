@@ -134,7 +134,6 @@ function calculateTreads() {
     // Validate job name
     if (!jobName) {
         jobNameField.classList.add('error'); // Highlight empty field in red
-        document.getElementById('error').textContent = 'Job name is required.';
         return;
     } else {
         jobNameField.classList.remove('error'); // Remove error styling if filled
