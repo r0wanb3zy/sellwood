@@ -128,10 +128,13 @@ function calculateTreads() {
     let bottomGap = document.getElementById('bottomGap').value === '' ? null : parseInt(document.getElementById('bottomGap').value);
 
     document.getElementById('error').textContent = ''; // Clear previous errors
+    document.getElementById('output').innerHTML = ''; // Clear the output
+    document.getElementById('Button').style.display = 'none'; // Hide print button
 
     // Validate job name
     if (!jobName) {
         jobNameField.classList.add('error'); // Highlight empty field in red
+        document.getElementById('error').textContent = 'Job name is required.';
         return;
     } else {
         jobNameField.classList.remove('error'); // Remove error styling if filled
@@ -225,6 +228,7 @@ function calculateTreads() {
         document.getElementById('Button').style.display = 'block';
     }
 }
+
 
 
 function printOutput() {
