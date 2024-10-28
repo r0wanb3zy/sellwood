@@ -117,30 +117,64 @@
     </div>
 
     <script>
-        function calculateTreads() {
-    const jobName = document.getElementById('jobName').value;
+function calculateTreads() {
+    const jobName = document.getElementById('jobName').value.trim();
+    const jobNameField = document.getElementById('jobName');
     const ladderHeight = parseInt(document.getElementById('ladderHeight').value);
     const ladderAngle = parseFloat(document.getElementById('ladderAngle').value);
-    const landingSpace = (ladderHeight / Math.tan(ladderAngle * (Math.PI / 180))) + 160;
+    const minTopGap = 30, minBottomGap = 65, minSpacing = 250, maxSpacing = 300;
+    const maxLadderHeight = 6000, minLadderHeight = 345, minValidHeightForZeroBottom = 530;
     let topGap = parseInt(document.getElementById('topGap').value);
     let bottomGap = document.getElementById('bottomGap').value === '' ? null : parseInt(document.getElementById('bottomGap').value);
 
-    const minTopGap = 30, minBottomGap = 65, minSpacing = 250, maxSpacing = 300;
-    const maxLadderHeight = 6000, minLadderHeight = 345, minValidHeightForZeroBottom = 530;
+    document.getElementById('error').textContent = ''; // Clear previous errors
 
-    document.getElementById('error').textContent = '';
-    document.getElementById('output').textContent = '';
-    const jobNameField = document.getElementById('jobName');
-
-    if (!jobName) { jobNameField.classList.add('error'); return; } else { jobNameField.classList.remove('error'); }
-    if (!ladderHeight || ladderHeight < minLadderHeight || ladderHeight > maxLadderHeight) {
-        document.getElementById('error').textContent = `Ladder height is required and must be between ${minLadderHeight}mm and ${maxLadderHeight}mm.`; return;
+    // Validate job name
+    if (!jobName) {
+        jobNameField.classList.add('error'); // Highlight empty field in red
+        return;
+    } else {
+        jobNameField.classList.remove('error'); // Remove error styling if filled
     }
-    if (ladderAngle < 70 || ladderAngle > 90) {
-        document.getElementById('error').textContent = `Ladder angle must be between 70° and 90°.`; return;
+
+    // Validate ladder height
+    if (isNaN(ladderHeight) || ladderHeight < minLadderHeight || ladderHeight > maxLadderHeight) {
+        document.getElementById('error').textContent = `Ladder height must be between ${minLadderHeight}mm and ${maxLadderHeight}mm.`;
+        return;
+    }
+
+    // Validate ladder angle
+    if (isNaN(ladderAngle) || ladderAngle < 70 || ladderAngle > 90) {
+        document.getElementById('error').textContent = 'Ladder angle must be between 70° and 90°.';
+        return;
+    }
+
+    // Validate top gap
+    if (isNaN(topGap) || topGap < minTopGap) {
+        document.getElementById('error').textContent = `Top gap must be at least ${minTopGap}mm.`;
+        return;
+    }
+
+    // Validate bottom gap with conditions
+    if (bottomGap === null || bottomGap === 0) {
+        if (ladderHeight < minValidHeightForZeroBottom || ladderHeight > maxLadderHeight) {
+            document.getElementById('error').textContent = `When the bottom gap is set to 0, ladder height must be between ${minValidHeightForZeroBottom}mm and ${maxLadderHeight}mm.`;
+            return;
+        }
+        bottomGap = 0; // Default to 0 if left blank or set to zero
+    } else if (isNaN(bottomGap) || bottomGap < minBottomGap) {
+        document.getElementById('error').textContent = `Bottom gap must be at least ${minBottomGap}mm.`;
+        return;
+    }
+
+    // Check that gaps are compatible with ladder height
+    if (ladderHeight < topGap + bottomGap) {
+        document.getElementById('error').textContent = 'Ladder height is too short for the required gaps.';
+        return;
     }
 
     const ladderLength = ladderHeight / Math.cos((90 - ladderAngle) * Math.PI / 180);
+    const landingSpace = (ladderHeight / Math.tan(ladderAngle * (Math.PI / 180))) + 160;
     let usableHeight = ladderLength - topGap - (bottomGap ?? 0);
     let treads = Math.floor(usableHeight / minSpacing) + 1;
     let spacing = usableHeight / (treads - 1);
@@ -177,8 +211,8 @@
         ----------------------------------------<br>
         Ladder type: Vertical ladder <br>
         Ladder height: ${ladderHeight}<br>
-    Ladder Length: ${Math.round(ladderLength)}<br>
-    Landing space: ${Math.round(landingSpace)}<br>
+        Ladder length: ${Math.round(ladderLength)}<br>
+        Landing space: ${Math.round(landingSpace)}<br>
         Ladder angle: ${ladderAngle}°<br>
         ----------------------------------------<br>
         Stringer: ${Math.round(ladderLength)}<br>
@@ -191,6 +225,7 @@
         document.getElementById('Button').style.display = 'block';
     }
 }
+
 
 function printOutput() {
     var outputDiv = document.getElementById("output");
