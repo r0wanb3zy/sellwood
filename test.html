@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Label Printing</title>
+<!-- External jsPDF library for saving PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
 <style>
     /* Modern CSS styles */
     body {
@@ -129,7 +131,6 @@
       background-color: #fff;
       color: #333;
     }
-
 </style>
 </head>
 <body>
@@ -158,30 +159,27 @@
   </div>
 
   <script>
- 
-  <!-- External jsPDF library for saving PDF -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
-  
-  <script>
     const { jsPDF } = window.jspdf;
 
-    function saveToPDF() {
-      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [150, 100] });
-      const name = document.getElementById("name").value;
-      const address = document.getElementById("address").value.replace(/\n/g, ', ');
-      const phone = document.getElementById("phone").value;
-      const notes = document.getElementById("notes").value;
-      
-      pdf.setFontSize(20);
-      pdf.text("Label Information", 10, 10);
-      pdf.setFontSize(14);
-      pdf.text(`Name: ${name}`, 10, 20);
-      pdf.text(`Address: ${address}`, 10, 30);
-      pdf.text(`Phone: ${phone}`, 10, 40);
-      pdf.text(`Notes: ${notes}`, 10, 50);
+function saveToPDF() {
+  const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [150, 100] });
+  const name = document.getElementById("name").value;
+  const address = document.getElementById("address").value.replace(/\n/g, ', ');
+  const phone = document.getElementById("phone").value;
+  const notes = document.getElementById("notes").value;
+  
+  pdf.setFontSize(20);
+  pdf.text("Label Information", 10, 10);
+  pdf.setFontSize(14);
+  pdf.text(`Name: ${name}`, 10, 20);
+  pdf.text(`Address: ${address}`, 10, 30);
+  pdf.text(`Phone: ${phone}`, 10, 40);
+  pdf.text(`Notes: ${notes}`, 10, 50);
 
-      pdf.save("Label.pdf");
-    }
+  // Save the PDF with the name input value as the filename
+  pdf.save(`${name}.pdf`);
+}
+    
 
 
 
