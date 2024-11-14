@@ -139,7 +139,7 @@
 
     <form id="infoForm">
       <input type="text" id="name" placeholder="Name">
-      <textarea id="address" placeholder="Street&#10;Suburb&#10;City" rows="3"></textarea>
+      <textarea id="address" placeholder="Street&#10;Suburb&#10;City&#10;State" rows="4"></textarea>
       <input type="text" id="phone" placeholder="Phone">
       <input type="text" id="notes" placeholder="Notes">
       <!-- Add dropdown menu -->
@@ -235,16 +235,22 @@
       }
     });
 
-    function populateForm(result) {
-      document.getElementById('name').value = result[0];
-      const street = result[1] || '';
-      const suburb = result[2] || '';
-      const city = result[3] || '';
-      const addressValue = suburb ? `${street}\n${suburb}\n${city}` : `${street}\n${city}`;
-      document.getElementById('address').value = addressValue;
-      document.getElementById('phone').value = result[4] || '';
-      document.getElementById('notes').value = result[5] || '';
-    }
+function populateForm(result) {
+  document.getElementById('name').value = result[0];
+  const street = result[1] || '';
+  const suburb = result[2] || '';
+  const city = result[3] || '';
+  const state = result[4] || '';
+  
+  // Include state in the address field formatting
+  const addressValue = suburb 
+    ? `${street}\n${suburb}\n${city}\n${state}`
+    : `${street}\n${city}\n${state}`;
+    
+  document.getElementById('address').value = addressValue;
+  document.getElementById('phone').value = result[5] || '';
+  document.getElementById('notes').value = result[6] || '';
+}
 
     function printContent() {
   var nameContent = document.getElementById("name").value.toUpperCase();
