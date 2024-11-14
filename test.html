@@ -4,8 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Label Printing</title>
-<!-- External jsPDF library for saving PDF -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
     /* Modern CSS styles */
     body {
@@ -36,12 +35,12 @@
       box-sizing: border-box;
       outline: none;
       text-align: center;
-      font-family: Arial, sans-serif;
+      font-family: Arial, sans-serif; /* Set font family */
     }
     
     #searchInput::placeholder {
       color: #ed1c24;
-      font-size: 16px;
+      font-size: 16px; /* Set font size for placeholder */
     }
     
     .dropdown {
@@ -52,9 +51,9 @@
       display: none;
       position: absolute;
       background-color: #f9f9f9;
-      width: 250px;
-      max-height: 300px;
-      overflow-y: auto;
+      width: 250px; /* Set width to 250px */
+      max-height: 300px; /* Adjust the maximum height as needed */
+      overflow-y: auto; /* Enable vertical scrolling */
       box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
       z-index: 1;
     }
@@ -69,7 +68,7 @@
     }
     
     #infoForm label {
-      display: none;
+      display: none; /* Hide labels */
     }
     
     #infoForm input[type="text"],
@@ -80,26 +79,26 @@
       font-size: 16px;
       border: 1px solid #ccc;
       border-radius: 5px;
-      margin-bottom: 5px;
+      margin-bottom: 5px; /* Adjusted margin to 5px */
       box-sizing: border-box;
       resize: vertical;
       text-align: center;
-      font-family: Arial, sans-serif;
+      font-family: Arial, sans-serif; /* Set font family */
     }
 
     #infoForm input[type="text"]::placeholder,
     #infoForm textarea::placeholder,
     #infoForm select::placeholder {
-      color: #ccc;
-      font-size: 16px;
+      color: #ccc; /* Light grey placeholder */
+      font-size: 16px; /* Set font size for placeholder */
     }
     
     #infoForm #address {
-      margin-bottom: 1px;
+      margin-bottom: 1px; /* Adjusted margin for address field */
     }
     
     #infoForm button {
-      width: 48%;
+      width: 100%;
       padding: 12px;
       font-size: 16px;
       background-color: #ed1c24;
@@ -110,7 +109,6 @@
       cursor: pointer;
       transition: background-color 0.3s ease;
       margin-top: 4px;
-      margin-right: 4px;
     }
     
     #infoForm button:hover {
@@ -131,6 +129,7 @@
       background-color: #fff;
       color: #333;
     }
+
 </style>
 </head>
 <body>
@@ -141,9 +140,10 @@
 
     <form id="infoForm">
       <input type="text" id="name" placeholder="Name">
-      <textarea id="address" placeholder="Street&#10;Suburb&#10;City" rows="3"></textarea>
+      <textarea id="address" placeholder="Street&#10;Suburb&#10;City&#10;State" rows="4"></textarea>
       <input type="text" id="phone" placeholder="Phone">
       <input type="text" id="notes" placeholder="Notes">
+      <!-- Add dropdown menu -->
       <select id="items">
         <option value="1">1</option>
         <option value="2">2</option>
@@ -152,37 +152,68 @@
         <option value="5">5</option>
       </select>
       <input type="checkbox" id="showDate"> Show Date<br>
-      <div id="dateDisplay"></div>
+      <div id="dateDisplay"></div> <!-- Date display section -->
       <button type="button" onclick="printContent()">Print</button>
       <button type="button" onclick="saveToPDF()">Save to PDF</button>
     </form>
   </div>
 
   <script>
-    const { jsPDF } = window.jspdf;
 
 function saveToPDF() {
-  const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [150, 100] });
-  const name = document.getElementById("name").value;
-  const address = document.getElementById("address").value.replace(/\n/g, ', ');
-  const phone = document.getElementById("phone").value;
-  const notes = document.getElementById("notes").value;
-  
-  pdf.setFontSize(20);
-  pdf.text("Label Information", 10, 10);
-  pdf.setFontSize(14);
-  pdf.text(`Name: ${name}`, 10, 20);
-  pdf.text(`Address: ${address}`, 10, 30);
-  pdf.text(`Phone: ${phone}`, 10, 40);
-  pdf.text(`Notes: ${notes}`, 10, 50);
+  const { jsPDF } = window.jspdf;
+  // Create a new jsPDF instance with custom size and landscape orientation
+  const doc = new jsPDF({
+    orientation: 'landscape',
+    unit: 'mm',
+    format: [100, 150] // Height: 100mm, Width: 150mm
+  });
 
-  // Save the PDF with the name input value as the filename
-  pdf.save(`${name}.pdf`);
+  var nameContent = document.getElementById("name").value.toUpperCase();
+  var addressContent = document.getElementById("address").value.toUpperCase();
+  var phoneContent = formatPhoneNumber(document.getElementById("phone").value.toUpperCase().replace(/[ -]/g, ''));
+  var notesContent = document.getElementById("notes").value;
+  var itemsValue = parseInt(document.getElementById("items").value);
+  var showDateCheckbox = document.getElementById("showDate");
+  var currentDate = new Date().toLocaleDateString('en-NZ');
+
+  let yPos = 10;
+
+  if (showDateCheckbox.checked) {
+    doc.setFontSize(10);
+    doc.text(currentDate, 10, yPos);
+    yPos += 10;
+  }
+
+  for (let i = 1; i <= itemsValue; i++) {
+    doc.setFontSize(16);
+    doc.text(nameContent, 10, yPos);
+    yPos += 10;
+
+    doc.setFontSize(12);
+    doc.text(addressContent, 10, yPos);
+    yPos += 20;
+
+    doc.text(phoneContent, 10, yPos);
+    yPos += 10;
+
+    doc.text(notesContent, 10, yPos);
+    yPos += 15;
+
+    if (itemsValue > 1) {
+      doc.setFontSize(10);
+      doc.text(`${i} of ${itemsValue}`, 10, yPos);
+      yPos += 10;
+    }
+
+    if (i < itemsValue) yPos += 20;
+  }
+
+  doc.save("label.pdf");
 }
-    
 
 
-
+    // Your existing JavaScript code here
     // Assuming data.csv has columns: Name, Street, Suburb, City, Phone, Notes
     const csvFilePath = 'https://raw.githubusercontent.com/r0wanb3zy/sellwood/main/building-supply-merchants.csv';
 
@@ -260,16 +291,22 @@ function saveToPDF() {
       }
     });
 
-    function populateForm(result) {
-      document.getElementById('name').value = result[0];
-      const street = result[1] || '';
-      const suburb = result[2] || '';
-      const city = result[3] || '';
-      const addressValue = suburb ? `${street}\n${suburb}\n${city}` : `${street}\n${city}`;
-      document.getElementById('address').value = addressValue;
-      document.getElementById('phone').value = result[4] || '';
-      document.getElementById('notes').value = result[5] || '';
-    }
+function populateForm(result) {
+  document.getElementById('name').value = result[0];
+  const street = result[1] || '';
+  const suburb = result[2] || '';
+  const city = result[3] || '';
+  const state = result[4] || '';
+  
+  // Include state in the address field formatting
+  const addressValue = suburb 
+    ? `${street}\n${suburb}\n${city}\n${state}`
+    : `${street}\n${city}\n${state}`;
+    
+  document.getElementById('address').value = addressValue;
+  document.getElementById('phone').value = result[5] || '';
+  document.getElementById('notes').value = result[6] || '';
+}
 
     function printContent() {
   var nameContent = document.getElementById("name").value.toUpperCase();
