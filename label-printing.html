@@ -1,17 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Label Printing</title>
-<style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Label Printing</title>
+  <style>
     /* Modern CSS styles */
     body {
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
     }
-    
+
     #container {
       width: 250px;
       max-width: 600px;
@@ -20,10 +21,12 @@
       border-radius: 5px;
       box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
       text-align: center;
-      margin: 10px auto; /* Center horizontally with top margin */
-      position: relative; /* Added position relative */
+      margin: 10px auto;
+      /* Center horizontally with top margin */
+      position: relative;
+      /* Added position relative */
     }
-    
+
     #searchInput {
       width: 100%;
       padding: 10px;
@@ -34,42 +37,48 @@
       box-sizing: border-box;
       outline: none;
       text-align: center;
-      font-family: Arial, sans-serif; /* Set font family */
+      font-family: Arial, sans-serif;
+      /* Set font family */
     }
-    
+
     #searchInput::placeholder {
       color: #ed1c24;
-      font-size: 16px; /* Set font size for placeholder */
+      font-size: 16px;
+      /* Set font size for placeholder */
     }
-    
+
     .dropdown {
       position: relative;
     }
-    
+
     .dropdown-content {
       display: none;
       position: absolute;
       background-color: #f9f9f9;
-      width: 250px; /* Set width to 250px */
-      max-height: 300px; /* Adjust the maximum height as needed */
-      overflow-y: auto; /* Enable vertical scrolling */
-      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      width: 250px;
+      /* Set width to 250px */
+      max-height: 300px;
+      /* Adjust the maximum height as needed */
+      overflow-y: auto;
+      /* Enable vertical scrolling */
+      box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
       z-index: 1;
     }
-    
+
     .dropdown-content a {
       padding: 12px 16px;
       display: block;
     }
-    
+
     .dropdown-content a:hover {
       background-color: #f1f1f1;
     }
-    
+
     #infoForm label {
-      display: none; /* Hide labels */
+      display: none;
+      /* Hide labels */
     }
-    
+
     #infoForm input[type="text"],
     #infoForm textarea,
     #infoForm select {
@@ -78,24 +87,29 @@
       font-size: 16px;
       border: 1px solid #ccc;
       border-radius: 5px;
-      margin-bottom: 5px; /* Adjusted margin to 5px */
+      margin-bottom: 5px;
+      /* Adjusted margin to 5px */
       box-sizing: border-box;
       resize: vertical;
       text-align: center;
-      font-family: Arial, sans-serif; /* Set font family */
+      font-family: Arial, sans-serif;
+      /* Set font family */
     }
 
     #infoForm input[type="text"]::placeholder,
     #infoForm textarea::placeholder,
     #infoForm select::placeholder {
-      color: #ccc; /* Light grey placeholder */
-      font-size: 16px; /* Set font size for placeholder */
+      color: #ccc;
+      /* Light grey placeholder */
+      font-size: 16px;
+      /* Set font size for placeholder */
     }
-    
+
     #infoForm #address {
-      margin-bottom: 1px; /* Adjusted margin for address field */
+      margin-bottom: 1px;
+      /* Adjusted margin for address field */
     }
-    
+
     #infoForm button {
       width: 100%;
       padding: 12px;
@@ -109,11 +123,11 @@
       transition: background-color 0.3s ease;
       margin-top: 4px;
     }
-    
+
     #infoForm button:hover {
       background-color: #c70014;
     }
-    
+
     #infoForm select {
       background-color: #fff;
       color: #333;
@@ -128,9 +142,9 @@
       background-color: #fff;
       color: #333;
     }
-
-</style>
+  </style>
 </head>
+
 <body>
 
   <div id="container">
@@ -252,7 +266,7 @@ function populateForm(result) {
   document.getElementById('notes').value = result[6] || '';
 }
 
-    function printContent() {
+function printContent() {
   var nameContent = document.getElementById("name").value.toUpperCase();
   var addressContent = document.getElementById("address").value.toUpperCase();
   var phoneContent = formatPhoneNumber(document.getElementById("phone").value.toUpperCase().replace(/[ -]/g, ''));
@@ -262,9 +276,13 @@ function populateForm(result) {
   var currentDate = new Date().toLocaleDateString('en-NZ');
 
   var printWindow = window.open('', '_blank');
-  printWindow.document.write('<html><head><title>Printable Content</title><style>');
+  printWindow.document.write('<html><head><title>' + nameContent + '</title><style>');  // Changed title to nameContent
   printWindow.document.write('body { font-family: "Arial Narrow", "Arial", sans-serif; margin: 0; padding: 0; }');
   printWindow.document.write('@media print { body { font-family: "Arial Narrow", "Arial", sans-serif; } }');
+  
+  // Set the page size
+  printWindow.document.write('@page { size: 150mm 100mm; margin: 10mm; }');
+  
   printWindow.document.write('.content-container { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; font-size: 28px; margin: 0 auto; max-width: 600px; height: 100vh; }');
   printWindow.document.write('.content-container p { margin: 0; }');
   printWindow.document.write('.content-container .category { margin: 5px 0; }'); // Reduced space between fields to 5px
@@ -321,4 +339,5 @@ function populateForm(result) {
     }
   </script>
 </body>
+
 </html>
