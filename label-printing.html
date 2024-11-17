@@ -142,6 +142,26 @@
       background-color: #fff;
       color: #333;
     }
+
+    #infoForm #emailButton {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      background-color: #fff;
+      font-weight: bold;
+      color: #ed1c24;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      margin-top: 4px;
+      border: 2px solid #ed1c24;
+      font-weight: normal;
+    }
+
+    #infoForm #emailButton:hover {
+      background-color: #fff;
+    }
   </style>
 </head>
 
@@ -156,17 +176,17 @@
       <textarea id="address" placeholder="Street&#10;Suburb&#10;City&#10;State" rows="4"></textarea>
       <input type="text" id="phone" placeholder="Phone">
       <input type="text" id="notes" placeholder="Notes">
-      <!-- Add dropdown menu -->
       <select id="items">
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="5">5</option>
-      </select>
+    <option value="1">1</option>
+    <option value="2">2</option>
+    <option value="3">3</option>
+    <option value="4">4</option>
+    <option value="5">5</option>
+  </select>
       <input type="checkbox" id="showDate"> Show Date<br>
-      <div id="dateDisplay"></div> <!-- Date display section -->
+      <div id="dateDisplay"></div>
       <button type="button" onclick="printContent()">Print</button>
+      <button type="button" id="emailButton" onclick="sendEmail()">+ Address</button>
     </form>
   </div>
 
@@ -255,13 +275,14 @@ function populateForm(result) {
   const suburb = result[2] || '';
   const city = result[3] || '';
   const state = result[4] || '';
-  
-  // Include state in the address field formatting
-  const addressValue = suburb 
-    ? `${street}\n${suburb}\n${city}\n${state}`
-    : `${street}\n${city}\n${state}`;
-    
-  document.getElementById('address').value = addressValue;
+
+  // Construct the address without adding blank lines for empty fields
+  let addressValue = `${street}`;
+  if (suburb) addressValue += `\n${suburb}`;
+  if (city) addressValue += `\n${city}`;
+  if (state) addressValue += `\n${state}`;
+
+  document.getElementById('address').value = addressValue.trim(); // Remove leading/trailing whitespace
   document.getElementById('phone').value = result[5] || '';
   document.getElementById('notes').value = result[6] || '';
 }
@@ -337,6 +358,32 @@ function printContent() {
         return phoneNumber;
       }
     }
+
+function sendEmail() {
+  // Gather the data from the form
+  var name = document.getElementById("name").value;
+  var address = document.getElementById("address").value.split("\n");
+  var phone = document.getElementById("phone").value;
+  var notes = document.getElementById("notes").value;
+
+  // Format the data in one line with commas separating each field
+  var emailBody = `
+Name: ${name}
+Street: ${address[0] || ''}
+Suburb: ${address[1] || ''}
+City: ${address[2] || ''}
+State: ${address[3] || ''}
+Phone: ${phone}
+Notes: ${notes}
+
+CSV: ${name},${address[0] || ''},${address[1] || ''},${address[2] || ''},${address[3] || ''},${phone},${notes}`;
+
+  // Set the subject dynamically
+  var subject = `Add [${name}] to label printing program`;
+
+  // Send the email (assuming you're using a mailto link)
+  window.location.href = `mailto:rowan@sellwood.co.nz?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+}
   </script>
 </body>
 
