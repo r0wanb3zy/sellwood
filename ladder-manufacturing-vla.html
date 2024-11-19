@@ -208,12 +208,15 @@ function calculateTreads() {
             timestamp.getHours() >= 12 ? 'pm' : 'am'
         }`;
 
-        // Determine number of brackets
-        let brackets;
-        if (ladderHeight <= 2000) brackets = 4;
-        else if (ladderHeight <= 4000) brackets = 6;
-        else if (ladderHeight <= 6000) brackets = 8;
-        else brackets = 'N/A';
+let brackets;
+if (ladderAngle === 90) {
+    if (ladderHeight <= 2000) brackets = 4;
+    else if (ladderHeight <= 4000) brackets = 6;
+    else if (ladderHeight <= 6000) brackets = 8;
+    else brackets = 'N/A';
+} else {
+    brackets = null; // No brackets for non-90-degree ladders
+}
         
         document.getElementById('output').innerHTML = `
         Timestamp: ${formattedTimestamp}<br>
@@ -225,7 +228,7 @@ function calculateTreads() {
         Landing space: ${Math.round(landingSpace)}<br>
         Ladder angle: ${ladderAngle}°<br>
         ----------------------------------------<br>
-        Brackets: ${brackets}<br>
+        ${brackets !== null ? `Brackets: ${brackets}<br>` : ''}
         Stringer: ${Math.round(ladderLength)}<br>
         Treads: ${treads} @ 407<br>
         Tread Spacing: ${Math.round(spacing)}<br>
