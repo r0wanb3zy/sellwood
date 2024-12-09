@@ -320,7 +320,7 @@
                 ladders.forEach(ladder => {
                     result += `<div class="column_ladders" data-price="${ladder.price}">
                         <img src="${ladder.imageUrl}" alt="${ladder.name}">
-                        <a href="${ladder.linkUrl}" class="button_ladders">${ladder.name}</a>
+                        <a href="${ladder.linkUrl}" class="button_ladders" target="_top">${ladder.name}</a>
                         <div class="height">${ladder.specs}</div>
                         <hr class="line">
                         <p>${ladder.description}</p>
