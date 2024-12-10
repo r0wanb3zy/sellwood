@@ -244,6 +244,10 @@
     <div class="result-container" id="result-container"></div>
 
     <script>
+                // Set focus to the input field when the page reloads
+        window.onload = function() {
+            document.getElementById('stud-height').focus();
+        };
         // Define ladder information in a dynamic array
         const ladders = [
             {
