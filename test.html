@@ -1,18 +1,24 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Label Printing</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<style>
+            <style></style>
+        </head>
+        <body>
+            
+
+
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Label Printing</title>
+  <style>
     /* Modern CSS styles */
     body {
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
     }
-    
+
     #container {
       width: 250px;
       max-width: 600px;
@@ -21,10 +27,12 @@
       border-radius: 5px;
       box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
       text-align: center;
-      margin: 10px auto; /* Center horizontally with top margin */
-      position: relative; /* Added position relative */
+      margin: 10px auto;
+      /* Center horizontally with top margin */
+      position: relative;
+      /* Added position relative */
     }
-    
+
     #searchInput {
       width: 100%;
       padding: 10px;
@@ -35,42 +43,48 @@
       box-sizing: border-box;
       outline: none;
       text-align: center;
-      font-family: Arial, sans-serif; /* Set font family */
+      font-family: Arial, sans-serif;
+      /* Set font family */
     }
-    
+
     #searchInput::placeholder {
       color: #ed1c24;
-      font-size: 16px; /* Set font size for placeholder */
+      font-size: 16px;
+      /* Set font size for placeholder */
     }
-    
+
     .dropdown {
       position: relative;
     }
-    
+
     .dropdown-content {
       display: none;
       position: absolute;
       background-color: #f9f9f9;
-      width: 250px; /* Set width to 250px */
-      max-height: 300px; /* Adjust the maximum height as needed */
-      overflow-y: auto; /* Enable vertical scrolling */
-      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      width: 250px;
+      /* Set width to 250px */
+      max-height: 300px;
+      /* Adjust the maximum height as needed */
+      overflow-y: auto;
+      /* Enable vertical scrolling */
+      box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
       z-index: 1;
     }
-    
+
     .dropdown-content a {
       padding: 12px 16px;
       display: block;
     }
-    
+
     .dropdown-content a:hover {
       background-color: #f1f1f1;
     }
-    
+
     #infoForm label {
-      display: none; /* Hide labels */
+      display: none;
+      /* Hide labels */
     }
-    
+
     #infoForm input[type="text"],
     #infoForm textarea,
     #infoForm select {
@@ -79,24 +93,29 @@
       font-size: 16px;
       border: 1px solid #ccc;
       border-radius: 5px;
-      margin-bottom: 5px; /* Adjusted margin to 5px */
+      margin-bottom: 5px;
+      /* Adjusted margin to 5px */
       box-sizing: border-box;
       resize: vertical;
       text-align: center;
-      font-family: Arial, sans-serif; /* Set font family */
+      font-family: Arial, sans-serif;
+      /* Set font family */
     }
 
     #infoForm input[type="text"]::placeholder,
     #infoForm textarea::placeholder,
     #infoForm select::placeholder {
-      color: #ccc; /* Light grey placeholder */
-      font-size: 16px; /* Set font size for placeholder */
+      color: #ccc;
+      /* Light grey placeholder */
+      font-size: 16px;
+      /* Set font size for placeholder */
     }
-    
+
     #infoForm #address {
-      margin-bottom: 1px; /* Adjusted margin for address field */
+      margin-bottom: 1px;
+      /* Adjusted margin for address field */
     }
-    
+
     #infoForm button {
       width: 100%;
       padding: 12px;
@@ -110,11 +129,11 @@
       transition: background-color 0.3s ease;
       margin-top: 4px;
     }
-    
+
     #infoForm button:hover {
       background-color: #c70014;
     }
-    
+
     #infoForm select {
       background-color: #fff;
       color: #333;
@@ -130,9 +149,41 @@
       color: #333;
     }
 
-</style>
-</head>
-<body>
+    #infoForm #emailButton {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      background-color: #fff;
+      font-weight: bold;
+      color: #ed1c24;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      margin-top: 4px;
+      border: 1px solid #ed1c24;
+      font-weight: normal;
+    }
+
+    #infoForm #emailButton:hover {
+      background-color: #fff;
+    }
+
+    .checkbox-container {
+      display: flex;
+      justify-content: space-between; /* Adjust spacing between checkboxes */
+      gap: 10px; /* Optional: Add some spacing between checkboxes */
+      margin-bottom: 10px; /* Adjust spacing below checkboxes */
+    }
+
+    .checkbox-container label {
+      display: inline; /* Ensure labels are inline */
+    }
+
+  </style>
+
+
+
 
   <div id="container">
     <input type="text" id="searchInput" placeholder="Search" tabindex="1">
@@ -140,79 +191,28 @@
 
     <form id="infoForm">
       <input type="text" id="name" placeholder="Name">
-      <textarea id="address" placeholder="Street&#10;Suburb&#10;City&#10;State" rows="4"></textarea>
+      <textarea id="address" placeholder="Street
+Suburb
+City
+State" rows="4"></textarea>
       <input type="text" id="phone" placeholder="Phone">
       <input type="text" id="notes" placeholder="Notes">
-      <!-- Add dropdown menu -->
       <select id="items">
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="5">5</option>
-      </select>
-      <input type="checkbox" id="showDate"> Show Date<br>
-      <div id="dateDisplay"></div> <!-- Date display section -->
+    <option value="1">1</option>
+    <option value="2">2</option>
+    <option value="3">3</option>
+    <option value="4">4</option>
+    <option value="5">5</option>
+  </select>
+      <input type="checkbox" id="showDate"> Date<br>
+      <input type="checkbox" id="showLogo"> Logo<br>
+      <div id="dateDisplay"></div>
       <button type="button" onclick="printContent()">Print</button>
-      <button type="button" onclick="saveToPDF()">Save to PDF</button>
+      <button type="button" id="emailButton" onclick="sendEmail()">+ Address</button>
     </form>
   </div>
 
   <script>
-
-function saveToPDF() {
-  const { jsPDF } = window.jspdf;
-  // Create a new jsPDF instance with custom size and landscape orientation
-  const doc = new jsPDF({
-    orientation: 'landscape',
-    unit: 'mm',
-    format: [100, 150] // Height: 100mm, Width: 150mm
-  });
-
-  var nameContent = document.getElementById("name").value.toUpperCase();
-  var addressContent = document.getElementById("address").value.toUpperCase();
-  var phoneContent = formatPhoneNumber(document.getElementById("phone").value.toUpperCase().replace(/[ -]/g, ''));
-  var notesContent = document.getElementById("notes").value;
-  var itemsValue = parseInt(document.getElementById("items").value);
-  var showDateCheckbox = document.getElementById("showDate");
-  var currentDate = new Date().toLocaleDateString('en-NZ');
-
-  let yPos = 10;
-
-  if (showDateCheckbox.checked) {
-    doc.setFontSize(10);
-    doc.text(currentDate, 10, yPos);
-    yPos += 10;
-  }
-
-  for (let i = 1; i <= itemsValue; i++) {
-    doc.setFontSize(16);
-    doc.text(nameContent, 10, yPos);
-    yPos += 10;
-
-    doc.setFontSize(12);
-    doc.text(addressContent, 10, yPos);
-    yPos += 20;
-
-    doc.text(phoneContent, 10, yPos);
-    yPos += 10;
-
-    doc.text(notesContent, 10, yPos);
-    yPos += 15;
-
-    if (itemsValue > 1) {
-      doc.setFontSize(10);
-      doc.text(`${i} of ${itemsValue}`, 10, yPos);
-      yPos += 10;
-    }
-
-    if (i < itemsValue) yPos += 20;
-  }
-
-  doc.save("label.pdf");
-}
-
-
     // Your existing JavaScript code here
     // Assuming data.csv has columns: Name, Street, Suburb, City, Phone, Notes
     const csvFilePath = 'https://raw.githubusercontent.com/r0wanb3zy/sellwood/main/building-supply-merchants.csv';
@@ -297,30 +297,36 @@ function populateForm(result) {
   const suburb = result[2] || '';
   const city = result[3] || '';
   const state = result[4] || '';
-  
-  // Include state in the address field formatting
-  const addressValue = suburb 
-    ? `${street}\n${suburb}\n${city}\n${state}`
-    : `${street}\n${city}\n${state}`;
-    
-  document.getElementById('address').value = addressValue;
+
+  // Construct the address without adding blank lines for empty fields
+  let addressValue = `${street}`;
+  if (suburb) addressValue += `\n${suburb}`;
+  if (city) addressValue += `\n${city}`;
+  if (state) addressValue += `\n${state}`;
+
+  document.getElementById('address').value = addressValue.trim(); // Remove leading/trailing whitespace
   document.getElementById('phone').value = result[5] || '';
   document.getElementById('notes').value = result[6] || '';
 }
 
-    function printContent() {
+function printContent() {
   var nameContent = document.getElementById("name").value.toUpperCase();
   var addressContent = document.getElementById("address").value.toUpperCase();
   var phoneContent = formatPhoneNumber(document.getElementById("phone").value.toUpperCase().replace(/[ -]/g, ''));
   var notesContent = document.getElementById("notes").value; // Do not change the case
   var itemsValue = parseInt(document.getElementById("items").value);
   var showDateCheckbox = document.getElementById("showDate");
+  var showLogoCheckbox = document.getElementById("showLogo");
   var currentDate = new Date().toLocaleDateString('en-NZ');
 
   var printWindow = window.open('', '_blank');
-  printWindow.document.write('<html><head><title>Printable Content</title><style>');
+  printWindow.document.write('<html><head><title>' + nameContent + '</title><style>');  // Changed title to nameContent
   printWindow.document.write('body { font-family: "Arial Narrow", "Arial", sans-serif; margin: 0; padding: 0; }');
   printWindow.document.write('@media print { body { font-family: "Arial Narrow", "Arial", sans-serif; } }');
+  
+  // Set the page size
+  printWindow.document.write('@page { size: 150mm 100mm; margin: 10mm; }');
+  
   printWindow.document.write('.content-container { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; font-size: 28px; margin: 0 auto; max-width: 600px; height: 100vh; }');
   printWindow.document.write('.content-container p { margin: 0; }');
   printWindow.document.write('.content-container .category { margin: 5px 0; }'); // Reduced space between fields to 5px
@@ -329,11 +335,16 @@ function populateForm(result) {
   printWindow.document.write('.label { page-break-after: always; }'); // Ensure page breaks between labels
   printWindow.document.write('.line { border-top: 1px solid black; width: 90%; margin: 0 auto; }'); // Define the line style
   printWindow.document.write('#dateDisplay { font-size: 10pt; position: fixed; bottom: 0px; left: 0px; }'); // Date display style
+    printWindow.document.write('.logo { position: fixed; bottom: 0px; right: 0px; width: 70px; height: auto; }'); // Logo style
   printWindow.document.write('@media print { .label { page-break-after: always; } }'); // Force page break after each label
   printWindow.document.write('</style></head><body>');
 
   if (showDateCheckbox.checked) {
     printWindow.document.write('<div id="dateDisplay">' + currentDate + '</div>');
+  }
+
+if (showLogoCheckbox.checked) {
+printWindow.document.write('<img class="logo" src="https://github.com/r0wanb3zy/sellwood/blob/main/images/logo-sellwood.png?raw=true" alt="Logo">');
   }
 
   for (let i = 1; i <= itemsValue; i++) {
@@ -375,6 +386,37 @@ function populateForm(result) {
         return phoneNumber;
       }
     }
+
+function sendEmail() {
+  // Gather the data from the form
+  var name = document.getElementById("name").value;
+  var address = document.getElementById("address").value.split("\n");
+  var phone = document.getElementById("phone").value;
+  var notes = document.getElementById("notes").value;
+
+  // Format the data in one line with commas separating each field
+  var emailBody = `
+Name: ${name}
+Street: ${address[0] || ''}
+Suburb: ${address[1] || ''}
+City: ${address[2] || ''}
+State: ${address[3] || ''}
+Phone: ${phone}
+Notes: ${notes}
+
+CSV: ${name},${address[0] || ''},${address[1] || ''},${address[2] || ''},${address[3] || ''},${phone},${notes}`;
+
+  // Set the subject dynamically
+  var subject = `Add [${name}] to label printing program`;
+
+  // Send the email (assuming you're using a mailto link)
+  window.location.href = `mailto:rowan@sellwood.co.nz?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+}
   </script>
+
+
+
+            <script>// Write JavaScript here</script>
+        
+    
 </body>
-</html>
