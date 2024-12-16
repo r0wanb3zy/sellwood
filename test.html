@@ -1,257 +1,243 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Label Printing</title>
-  <style>
-    /* Modern CSS styles */
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-.dropdown {
-  position: relative;
-}
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Label Printing</title>
+    <style>
+      /* Modern CSS styles */
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+      }
 
-.dropdown-content {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-  background-color: #fff;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
-  max-height: 200px;
-  overflow-y: auto;
-  display: none; /* Hidden by default */
-}
+      .dropdown {
+        position: relative;
+      }
 
-.dropdown-content a {
-  display: block;
-  padding: 10px;
-  text-align: left;
-  font-size: 14px;
-  color: #333;
-  text-decoration: none;
-  cursor: pointer;
-}
+      .dropdown-content {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+        max-height: 200px;
+        overflow-y: auto;
+        display: none;
+        /* Hidden by default */
+      }
 
-.dropdown-content a:hover,
-.dropdown-content a:focus {
-  background-color: #f0f0f0;
-  outline: none;
-}
-    #container {
-      width: 250px;
-      max-width: 600px;
-      background-color: #fff;
-      padding: 20px;
-      border-radius: 5px;
-      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-      text-align: center;
-      margin: 10px auto;
-      /* Center horizontally with top margin */
-      position: relative;
-      /* Added position relative */
-    }
+      .dropdown-content a {
+        display: block;
+        padding: 10px;
+        text-align: left;
+        font-size: 14px;
+        color: #333;
+        text-decoration: none;
+        cursor: pointer;
+      }
 
-    #searchInput {
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      border: 1px solid #ed1c24;
-      border-radius: 5px;
-      margin-bottom: 5px;
-      box-sizing: border-box;
-      outline: none;
-      text-align: center;
-      font-family: Arial, sans-serif;
-      /* Set font family */
-    }
+      .dropdown-content a:hover,
+      .dropdown-content a:focus {
+        background-color: #f0f0f0;
+        outline: none;
+      }
 
-    #infoForm input[type="text"],
-    #infoForm textarea,
-    #infoForm select {
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      margin-bottom: 5px;
-      /* Adjusted margin to 5px */
-      box-sizing: border-box;
-      resize: vertical;
-      text-align: center;
-      font-family: Arial, sans-serif;
-      /* Set font family */
-    }
+      #container {
+        width: 250px;
+        max-width: 600px;
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        margin: 10px auto;
+        /* Center horizontally with top margin */
+        position: relative;
+        /* Added position relative */
+      }
 
-    #infoForm button {
-      width: 100%;
-      padding: 12px;
-      font-size: 16px;
-      background-color: #ed1c24;
-      font-weight: bold;
-      color: #fff;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-      margin-top: 4px;
-    }
+      #searchInput {
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+        border: 1px solid #ed1c24;
+        border-radius: 5px;
+        margin-bottom: 5px;
+        box-sizing: border-box;
+        outline: none;
+        text-align: center;
+        font-family: Arial, sans-serif;
+        /* Set font family */
+      }
 
-    #infoForm button:hover {
-      background-color: #c70014;
-    }
+      #infoForm input[type="text"],
+      #infoForm textarea,
+      #infoForm select {
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        margin-bottom: 5px;
+        /* Adjusted margin to 5px */
+        box-sizing: border-box;
+        resize: vertical;
+        text-align: center;
+        font-family: Arial, sans-serif;
+        /* Set font family */
+      }
 
-    /* Toggle Switch Styles */
-    .toggle-container {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 5px;
-      margin-top: 5px;
-    }
+      #infoForm button {
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+        background-color: #ed1c24;
+        font-weight: bold;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        margin-top: 4px;
+      }
 
-    .toggle-label { 
-      font-size: 16px;
-    }
+      #infoForm button:hover {
+        background-color: #c70014;
+      }
 
-    .toggle-switch {
-      position: relative;
-      display: inline-block;
-      width: 40px;
-      height: 20px;
-    }
+      /* Toggle Switch Styles */
+      .toggle-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 5px;
+        margin-top: 5px;
+      }
 
-    .toggle-switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
+      .toggle-label {
+        font-size: 16px;
+      }
 
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: #ccc;
-      transition: 0.4s;
-      border-radius: 20px;
-    }
+      .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 40px;
+        height: 20px;
+      }
 
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 14px;
-      width: 14px;
-      left: 3px;
-      bottom: 3px;
-      background-color: white;
-      transition: 0.4s;
-      border-radius: 50%;
-    }
+      .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
 
-    input:checked + .slider {
-      background-color: #ed1c24;
-    }
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: 0.4s;
+        border-radius: 20px;
+      }
 
-    input:checked + .slider:before {
-      transform: translateX(20px);
-    }
-  </style>
-</head>
-<body>
-  <div id="container">
-    <input type="text" id="searchInput" placeholder="Search" tabindex="1">
-    <div id="searchResults" class="dropdown"></div>
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 14px;
+        width: 14px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+      }
 
-    <form id="infoForm">
-      <input type="text" id="name" placeholder="Name">
-      <textarea id="address" placeholder="Street
+      input:checked+.slider {
+        background-color: #ed1c24;
+      }
+
+      input:checked+.slider:before {
+        transform: translateX(20px);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <input type="text" id="searchInput" placeholder="Search" tabindex="1">
+      <div id="searchResults" class="dropdown"></div>
+      <form id="infoForm">
+        <input type="text" id="name" placeholder="Name">
+        <textarea id="address" placeholder="Street
 Suburb
 City
 State" rows="4"></textarea>
-      <input type="text" id="phone" placeholder="Phone">
-      <input type="text" id="notes" placeholder="Notes">
-      <select id="items">
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="5">5</option>
-      </select>
-
-            <!-- Toggle for Logo -->
-      <div class="toggle-container">
-        <span class="toggle-label">Logo</span>
-        <label class="toggle-switch">
-          <input type="checkbox" id="showLogo" checked>
-          <span class="slider"></span>
-        </label>
-      </div>
-
-      <!-- Toggle for Date -->
-      <div class="toggle-container">
-        <span class="toggle-label">Date</span>
-        <label class="toggle-switch">
-          <input type="checkbox" id="showDate">
-          <span class="slider"></span>
-        </label>
-      </div>
-
-      <div id="dateDisplay"></div>
-      <button type="button" onclick="printContent()">Print</button>
-      <button type="button" id="emailButton" onclick="sendEmail()">+ Address</button>
-    </form>
-  </div>
-
-  <script>
-    // Your existing JavaScript code here
-    // Assuming data.csv has columns: Name, Street, Suburb, City, Phone, Notes
-    const csvFilePath = 'https://raw.githubusercontent.com/r0wanb3zy/sellwood/main/building-supply-merchants.csv';
-
-    // Fetch data from CSV file
-    fetch(csvFilePath)
-      .then(response => response.text())
-      .then(data => {
+        <input type="text" id="phone" placeholder="Phone">
+        <input type="text" id="notes" placeholder="Notes">
+        <select id="items">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+        </select>
+        <!-- Toggle for Logo -->
+        <div class="toggle-container">
+          <span class="toggle-label">Logo</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="showLogo" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <!-- Toggle for Date -->
+        <div class="toggle-container">
+          <span class="toggle-label">Date</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="showDate">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div id="dateDisplay"></div>
+        <button type="button" onclick="printContent()">Print</button>
+        <button type="button" id="emailButton" onclick="sendEmail()">+ Address</button>
+      </form>
+    </div>
+    <script>
+      // Your existing JavaScript code here
+      // Assuming data.csv has columns: Name, Street, Suburb, City, Phone, Notes
+      const csvFilePath = 'https://raw.githubusercontent.com/r0wanb3zy/sellwood/main/building-supply-merchants.csv';
+      // Fetch data from CSV file
+      fetch(csvFilePath).then(response => response.text()).then(data => {
         const rows = data.split('\n').slice(1); // Skip header row
         const dataArray = rows.map(row => row.split(','));
-
         // Your search logic here
         const searchInput = document.getElementById('searchInput');
         const searchResultsContainer = document.getElementById('searchResults');
-
-        searchInput.addEventListener('input', function () {
+        searchInput.addEventListener('input', function() {
           const searchTerm = this.value.toLowerCase();
-          const searchResults = dataArray.filter(row =>
-            row.some(col => col.toLowerCase().includes(searchTerm))
-          );
-
+          const searchResults = dataArray.filter(row => row.some(col => col.toLowerCase().includes(searchTerm)));
           searchResultsContainer.innerHTML = '';
-
           const dropdownContent = document.createElement('div');
           dropdownContent.classList.add('dropdown-content');
-
           searchResults.forEach((result, index) => {
             const listItem = document.createElement('a');
             listItem.textContent = result[0]; // Assuming the first column is the Name
             listItem.tabIndex = index + 2; // Set tabindex for tab navigation
             listItem.setAttribute('role', 'option'); // Set ARIA role
-
-            listItem.addEventListener('click', function () {
+            listItem.addEventListener('click', function() {
               // Populate the form fields
               populateForm(result);
               dropdownContent.style.display = 'none'; // Hide dropdown after selection
             });
-
-            listItem.addEventListener('keydown', function (event) {
+            listItem.addEventListener('keydown', function(event) {
               if (event.key === 'Enter') {
                 // Populate the form fields
                 populateForm(result);
@@ -270,132 +256,120 @@ State" rows="4"></textarea>
                 searchResultsContainer.querySelectorAll('a')[nextIndex].focus();
               }
             });
-
             dropdownContent.appendChild(listItem);
           });
-
           searchResultsContainer.appendChild(dropdownContent);
           dropdownContent.style.display = 'block';
         });
       });
-
-    // Function to collapse menu when clicking outside
-    document.body.addEventListener('click', function(event) {
-      const searchInput = document.getElementById('searchInput');
-      const searchResults = document.getElementById('searchResults');
-      if (event.target !== searchInput && event.target !== searchResults) {
-        const dropdownContent = document.querySelector('.dropdown-content');
-        if (dropdownContent) {
-          dropdownContent.style.display = 'none';
+      // Function to collapse menu when clicking outside
+      document.body.addEventListener('click', function(event) {
+        const searchInput = document.getElementById('searchInput');
+        const searchResults = document.getElementById('searchResults');
+        if (event.target !== searchInput && event.target !== searchResults) {
+          const dropdownContent = document.querySelector('.dropdown-content');
+          if (dropdownContent) {
+            dropdownContent.style.display = 'none';
+          }
         }
+      });
+
+      function populateForm(result) {
+        document.getElementById('name').value = result[0];
+        const street = result[1] || '';
+        const suburb = result[2] || '';
+        const city = result[3] || '';
+        const state = result[4] || '';
+        // Construct the address without adding blank lines for empty fields
+        let addressValue = `${street}`;
+        if (suburb) addressValue += `\n${suburb}`;
+        if (city) addressValue += `\n${city}`;
+        if (state) addressValue += `\n${state}`;
+        document.getElementById('address').value = addressValue.trim(); // Remove leading/trailing whitespace
+        document.getElementById('phone').value = result[5] || '';
+        document.getElementById('notes').value = result[6] || '';
       }
-    });
 
-function populateForm(result) {
-  document.getElementById('name').value = result[0];
-  const street = result[1] || '';
-  const suburb = result[2] || '';
-  const city = result[3] || '';
-  const state = result[4] || '';
+      function printContent() {
+        var nameContent = document.getElementById("name").value.toUpperCase();
+        var addressContent = document.getElementById("address").value.toUpperCase();
+        var phoneContent = formatPhoneNumber(document.getElementById("phone").value.toUpperCase().replace(/[ -]/g, ''));
+        var notesContent = document.getElementById("notes").value; // Do not change the case
+        var itemsValue = parseInt(document.getElementById("items").value);
+        var showDateCheckbox = document.getElementById("showDate");
+        var showLogoCheckbox = document.getElementById("showLogo");
+        var currentDate = new Date().toLocaleDateString('en-NZ');
+        var printWindow = window.open('', '_blank');
+        printWindow.document.write(' < html >< head >< title > ' + nameContent + ' < /title>< style > '); // Changed title to nameContent
+        printWindow.document.write('body { font-family: "Arial Narrow", "Arial", sans-serif; margin: 0; padding: 0; }');
+        printWindow.document.write('@media print { body { font-family: "Arial Narrow", "Arial", sans-serif; } }');
+        // Set the page size
+        printWindow.document.write('@page { size: 150mm 100mm; margin: 10mm; }');
+        printWindow.document.write('.content-container { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; font-size: 28px; margin: 0 auto; max-width: 600px; height: 100vh; }');
+        printWindow.document.write('.content-container p { margin: 0; }');
+        printWindow.document.write('.content-container .category { margin: 5px 0; }'); // Reduced space between fields to 5px
+        printWindow.document.write('.notes { font-size: 12pt; }');
+        printWindow.document.write('.contact { font-size: 20px; }');
+        printWindow.document.write('.label { page-break-after: always; }'); // Ensure page breaks between labels
+        printWindow.document.write('.line { border-top: 1px solid black; width: 90%; margin: 0 auto; }'); // Define the line style
+        printWindow.document.write('#dateDisplay { font-size: 10pt; position: fixed; bottom: 0px; left: 0px; }'); // Date display style
+        printWindow.document.write('.logo { position: fixed; bottom: 0px; right: 0px; width: 70px; height: auto; }'); // Logo style
+        printWindow.document.write('@media print { .label { page-break-after: always; } }'); // Force page break after each label
+        printWindow.document.write(' < /style>< /head > < body > ');
+            if (showDateCheckbox.checked) {
+              printWindow.document.write(' < div id = "dateDisplay" > ' + currentDate + ' < /div>');
+            }
+            if (showLogoCheckbox.checked) {
+              printWindow.document.write(' < img class = "logo"
+                src = "https://github.com/r0wanb3zy/sellwood/blob/main/images/logo-sellwood.png?raw=true"
+                alt = "Logo" > ');
+              }
+              for (let i = 1; i <= itemsValue; i++) {
+                printWindow.document.write(' < div class = "content-container label" > ');
+                printWindow.document.write(' < p class = "category" >< strong > ' + nameContent + ' < /strong>< /p>');
+                printWindow.document.write(' < div class = "line" >< /div>');
+                / /
+                Add the line between name and address printWindow.document.write(' < div class = "category" >< strong > ' + addressContent.replace(/\n/g, ' < br > ') + ' < /strong>< /div>');
+                printWindow.document.write(' < div class = "line" >< /div>');
+                printWindow.document.write(' < p class = "category contact" > ' + phoneContent + ' < /p>');
+                printWindow.document.write(' < p class = "category notes" >< em > ' + notesContent + ' < /em>< /p>');
+                if (itemsValue > 1) {
+                  printWindow.document.write(' < p class = "category"
+                    style = "font-size: 12pt; font-style: italic;" > < strong > ' + i + ' of ' + itemsValue + ' < /strong>< /p > ');
+                  }
+                  printWindow.document.write(' < /div>');
+                }
+                printWindow.document.write(' < /body>< /html>');
+                printWindow.document.close();
+                printWindow.onload = function() {
+                  printWindow.print();
+                };
+              }
 
-  // Construct the address without adding blank lines for empty fields
-  let addressValue = `${street}`;
-  if (suburb) addressValue += `\n${suburb}`;
-  if (city) addressValue += `\n${city}`;
-  if (state) addressValue += `\n${state}`;
+              function formatPhoneNumber(phoneNumber) {
+                phoneNumber = phoneNumber.replace(/^\+64/, '0');
+                var mobilePattern = /^(021|022|027|029)(\d{3}|\d{4})(\d{4}|\d{3})$/;
+                var landlinePattern = /^(?!08)(0[3-9])(\d{3}|\d{4})(\d{4}|\d{3})$/;
+                var tollFreePattern = /^(0800)(\d{3}|\d{4})(\d{4}|\d{3})$/;
+                if (mobilePattern.test(phoneNumber)) {
+                  return phoneNumber.replace(/^(021|022|027|029)(\d{3}|\d{4})(\d{4}|\d{3})$/, '$1 $2 $3');
+                } else if (landlinePattern.test(phoneNumber)) {
+                  return phoneNumber.replace(/^(?!08)(0[3-9])(\d{3}|\d{4})(\d{4}|\d{3})$/, '$1 $2 $3');
+                } else if (tollFreePattern.test(phoneNumber)) {
+                  return phoneNumber.replace(/^(0800)(\d{3}|\d{4})(\d{4}|\d{3})$/, '$1 $2 $3');
+                } else {
+                  return phoneNumber;
+                }
+              }
 
-  document.getElementById('address').value = addressValue.trim(); // Remove leading/trailing whitespace
-  document.getElementById('phone').value = result[5] || '';
-  document.getElementById('notes').value = result[6] || '';
-}
-
-function printContent() {
-  var nameContent = document.getElementById("name").value.toUpperCase();
-  var addressContent = document.getElementById("address").value.toUpperCase();
-  var phoneContent = formatPhoneNumber(document.getElementById("phone").value.toUpperCase().replace(/[ -]/g, ''));
-  var notesContent = document.getElementById("notes").value; // Do not change the case
-  var itemsValue = parseInt(document.getElementById("items").value);
-  var showDateCheckbox = document.getElementById("showDate");
-  var showLogoCheckbox = document.getElementById("showLogo");
-  var currentDate = new Date().toLocaleDateString('en-NZ');
-
-  var printWindow = window.open('', '_blank');
-  printWindow.document.write('<html><head><title>' + nameContent + '</title><style>');  // Changed title to nameContent
-  printWindow.document.write('body { font-family: "Arial Narrow", "Arial", sans-serif; margin: 0; padding: 0; }');
-  printWindow.document.write('@media print { body { font-family: "Arial Narrow", "Arial", sans-serif; } }');
-  
-  // Set the page size
-  printWindow.document.write('@page { size: 150mm 100mm; margin: 10mm; }');
-  
-  printWindow.document.write('.content-container { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; font-size: 28px; margin: 0 auto; max-width: 600px; height: 100vh; }');
-  printWindow.document.write('.content-container p { margin: 0; }');
-  printWindow.document.write('.content-container .category { margin: 5px 0; }'); // Reduced space between fields to 5px
-  printWindow.document.write('.notes { font-size: 12pt; }');
-  printWindow.document.write('.contact { font-size: 20px; }');
-  printWindow.document.write('.label { page-break-after: always; }'); // Ensure page breaks between labels
-  printWindow.document.write('.line { border-top: 1px solid black; width: 90%; margin: 0 auto; }'); // Define the line style
-  printWindow.document.write('#dateDisplay { font-size: 10pt; position: fixed; bottom: 0px; left: 0px; }'); // Date display style
-    printWindow.document.write('.logo { position: fixed; bottom: 0px; right: 0px; width: 70px; height: auto; }'); // Logo style
-  printWindow.document.write('@media print { .label { page-break-after: always; } }'); // Force page break after each label
-  printWindow.document.write('</style></head><body>');
-
-  if (showDateCheckbox.checked) {
-    printWindow.document.write('<div id="dateDisplay">' + currentDate + '</div>');
-  }
-
-if (showLogoCheckbox.checked) {
-printWindow.document.write('<img class="logo" src="https://github.com/r0wanb3zy/sellwood/blob/main/images/logo-sellwood.png?raw=true" alt="Logo">');
-  }
-
-  for (let i = 1; i <= itemsValue; i++) {
-    printWindow.document.write('<div class="content-container label">');
-    printWindow.document.write('<p class="category"><strong>' + nameContent + '</strong></p>');
-    printWindow.document.write('<div class="line"></div>'); // Add the line between name and address
-    printWindow.document.write('<div class="category"><strong>' + addressContent.replace(/\n/g, '<br>') + '</strong></div>');
-    printWindow.document.write('<div class="line"></div>');
-    printWindow.document.write('<p class="category contact">' + phoneContent + '</p>');
-    printWindow.document.write('<p class="category notes"><em>' + notesContent + '</em></p>');
-    if (itemsValue > 1) {
-      printWindow.document.write('<p class="category" style="font-size: 12pt; font-style: italic;"><strong>' + i + ' of ' + itemsValue + '</strong></p>');
-    }
-    printWindow.document.write('</div>');
-  }
-
-  printWindow.document.write('</body></html>');
-  printWindow.document.close();
-
-  printWindow.onload = function () {
-    printWindow.print();
-  };
-}
-
-    function formatPhoneNumber(phoneNumber) {
-      phoneNumber = phoneNumber.replace(/^\+64/, '0');
-
-      var mobilePattern = /^(021|022|027|029)(\d{3}|\d{4})(\d{4}|\d{3})$/;
-      var landlinePattern = /^(?!08)(0[3-9])(\d{3}|\d{4})(\d{4}|\d{3})$/;
-      var tollFreePattern = /^(0800)(\d{3}|\d{4})(\d{4}|\d{3})$/;
-
-      if (mobilePattern.test(phoneNumber)) {
-        return phoneNumber.replace(/^(021|022|027|029)(\d{3}|\d{4})(\d{4}|\d{3})$/, '$1 $2 $3');
-      } else if (landlinePattern.test(phoneNumber)) {
-        return phoneNumber.replace(/^(?!08)(0[3-9])(\d{3}|\d{4})(\d{4}|\d{3})$/, '$1 $2 $3');
-      } else if (tollFreePattern.test(phoneNumber)) {
-        return phoneNumber.replace(/^(0800)(\d{3}|\d{4})(\d{4}|\d{3})$/, '$1 $2 $3');
-      } else {
-        return phoneNumber;
-      }
-    }
-
-function sendEmail() {
-  // Gather the data from the form
-  var name = document.getElementById("name").value;
-  var address = document.getElementById("address").value.split("\n");
-  var phone = document.getElementById("phone").value;
-  var notes = document.getElementById("notes").value;
-
-  // Format the data in one line with commas separating each field
-  var emailBody = `
+              function sendEmail() {
+                // Gather the data from the form
+                var name = document.getElementById("name").value;
+                var address = document.getElementById("address").value.split("\n");
+                var phone = document.getElementById("phone").value;
+                var notes = document.getElementById("notes").value;
+                // Format the data in one line with commas separating each field
+                var emailBody = `
 Name: ${name}
 Street: ${address[0] || ''}
 Suburb: ${address[1] || ''}
@@ -405,18 +379,13 @@ Phone: ${phone}
 Notes: ${notes}
 
 CSV: ${name},${address[0] || ''},${address[1] || ''},${address[2] || ''},${address[3] || ''},${phone},${notes}`;
-
-  // Set the subject dynamically
-  var subject = `Add [${name}] to label printing program`;
-
-  // Send the email (assuming you're using a mailto link)
-  window.location.href = `mailto:rowan@sellwood.co.nz?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
-}
-  </script>
-
-
-
-            <script>// Write JavaScript here</script>
-        
-    
-</body>
+                // Set the subject dynamically
+                var subject = `Add [${name}] to label printing program`;
+                // Send the email (assuming you're using a mailto link)
+                window.location.href = `mailto:rowan@sellwood.co.nz?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+              }
+    </script>
+    <script>
+      // Write JavaScript here
+    </script>
+  </body>
