@@ -1,18 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-            <style></style>
-        </head>
-        <body>
-            
-
-
-
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Label Printing</title>
   <style>
-    /* Modern CSS styles */
     body {
       font-family: Arial, sans-serif;
       margin: 0;
@@ -28,9 +20,6 @@
       box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
       text-align: center;
       margin: 10px auto;
-      /* Center horizontally with top margin */
-      position: relative;
-      /* Added position relative */
     }
 
     #searchInput {
@@ -43,14 +32,11 @@
       box-sizing: border-box;
       outline: none;
       text-align: center;
-      font-family: Arial, sans-serif;
-      /* Set font family */
     }
 
     #searchInput::placeholder {
       color: #ed1c24;
       font-size: 16px;
-      /* Set font size for placeholder */
     }
 
     .dropdown {
@@ -62,11 +48,8 @@
       position: absolute;
       background-color: #f9f9f9;
       width: 250px;
-      /* Set width to 250px */
       max-height: 300px;
-      /* Adjust the maximum height as needed */
       overflow-y: auto;
-      /* Enable vertical scrolling */
       box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
       z-index: 1;
     }
@@ -80,11 +63,6 @@
       background-color: #f1f1f1;
     }
 
-    #infoForm label {
-      display: none;
-      /* Hide labels */
-    }
-
     #infoForm input[type="text"],
     #infoForm textarea,
     #infoForm select {
@@ -94,26 +72,21 @@
       border: 1px solid #ccc;
       border-radius: 5px;
       margin-bottom: 5px;
-      /* Adjusted margin to 5px */
       box-sizing: border-box;
       resize: vertical;
       text-align: center;
       font-family: Arial, sans-serif;
-      /* Set font family */
     }
+    #infoForm textarea {
+  resize: none; /* Optional: prevents resizing of the textarea */
+  margin-bottom: 1px;
+}
 
     #infoForm input[type="text"]::placeholder,
     #infoForm textarea::placeholder,
     #infoForm select::placeholder {
       color: #ccc;
-      /* Light grey placeholder */
       font-size: 16px;
-      /* Set font size for placeholder */
-    }
-
-    #infoForm #address {
-      margin-bottom: 1px;
-      /* Adjusted margin for address field */
     }
 
     #infoForm button {
@@ -134,33 +107,9 @@
       background-color: #c70014;
     }
 
-    #infoForm select {
-      background-color: #fff;
-      color: #333;
-      background-image: none;
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      appearance: none;
-      padding-right: 10px;
-    }
-
-    #infoForm select option {
-      background-color: #fff;
-      color: #333;
-    }
-
     #infoForm #emailButton {
-      width: 100%;
-      padding: 12px;
-      font-size: 16px;
       background-color: #fff;
-      font-weight: bold;
       color: #ed1c24;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-      margin-top: 4px;
       border: 1px solid #ed1c24;
       font-weight: normal;
     }
@@ -169,22 +118,61 @@
       background-color: #fff;
     }
 
-    .checkbox-container {
+    /* Updated toggle styles */
+    #infoForm label {
       display: flex;
-      justify-content: space-between; /* Adjust spacing between checkboxes */
-      gap: 10px; /* Optional: Add some spacing between checkboxes */
-      margin-bottom: 10px; /* Adjust spacing below checkboxes */
+      align-items: center;
+      justify-content: space-between;
+      margin: 5px 0px 6px 0px;
     }
 
-    .checkbox-container label {
-      display: inline; /* Ensure labels are inline */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 20px;
     }
 
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: 0.3s;
+      border-radius: 20px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: #ed1c24;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
   </style>
-
-
-
-
+</head>
+<body>
   <div id="container">
     <input type="text" id="searchInput" placeholder="Search" tabindex="1">
     <div id="searchResults" class="dropdown"></div>
@@ -198,20 +186,34 @@ State" rows="4"></textarea>
       <input type="text" id="phone" placeholder="Phone">
       <input type="text" id="notes" placeholder="Notes">
       <select id="items">
-    <option value="1">1</option>
-    <option value="2">2</option>
-    <option value="3">3</option>
-    <option value="4">4</option>
-    <option value="5">5</option>
-  </select>
-      <input type="checkbox" id="showDate"> Date<br>
-      <input type="checkbox" id="showLogo"> Logo<br>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+      </select>
+
+<label>
+  Logo
+  <div class="switch">
+    <input type="checkbox" id="showLogo" checked>
+    <span class="slider"></span>
+  </div>
+</label>
+
+      <label>
+        Date
+        <div class="switch">
+          <input type="checkbox" id="showDate">
+          <span class="slider"></span>
+        </div>
+      </label>
+
       <div id="dateDisplay"></div>
       <button type="button" onclick="printContent()">Print</button>
       <button type="button" id="emailButton" onclick="sendEmail()">+ Address</button>
     </form>
   </div>
-
   <script>
     // Your existing JavaScript code here
     // Assuming data.csv has columns: Name, Street, Suburb, City, Phone, Notes
