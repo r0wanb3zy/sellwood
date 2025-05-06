@@ -136,7 +136,7 @@ function calculateTreads() {
     const ladderAngle = parseFloat(document.getElementById('ladderAngle').value);
     const staCheckbox = document.getElementById('staCheckbox').checked;
     const minTopGap = 30, minBottomGap = 65, minSpacing = 250, maxSpacing = 300;
-    const maxLadderHeight = 6000, minLadderHeight = 345, minValidHeightForZeroBottom = 530;
+    const maxLadderHeight = staCheckbox ? 5000 : 6000, minLadderHeight = 345, minValidHeightForZeroBottom = 530;
     let topGap = parseInt(document.getElementById('topGap').value);
     let bottomGap = document.getElementById('bottomGap').value === '' ? null : parseInt(document.getElementById('bottomGap').value);
 
