@@ -1,0 +1,328 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spacing Calculator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    #container {
+      max-width: 300px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      text-align: center;
+      margin: 10px auto;
+    }
+
+    input[type="text"], select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+
+    select {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+    }
+
+    input[type="text"].error {
+      border: 1px solid red;
+    }
+
+    input[type="text"]::placeholder {
+      color: #ccc;
+    }
+
+    label {
+      font-size: 16px;
+      margin-left: 5px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #ED1C24;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #c70014;
+    }
+
+    #output {
+      margin-top: 5px;
+      background-color: #f9f9f9;
+      padding: 20px;
+      border-radius: 5px;
+      font-size: 16px;
+      margin-bottom: 5px;
+      text-align: center;
+    }
+
+    #printButton {
+      display: none;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <input type="text" id="length" placeholder="Length (mm)">
+    <input type="text" id="thickness" placeholder="Thickness (mm)">
+    <input type="text" id="quantity" placeholder="Quantity">
+    <select id="measurementType">
+      <option value="inside">Inside to Inside</option>
+      <option value="outside">Outside to Outside</option>
+      <option value="outsideToInside">Outside to Inside</option>
+    </select>
+    <button onclick="calculateSpacing()">Calculate</button>
+    <div id="output"></div>
+    <button id="printButton" onclick="printOutput()">Print</button>
+  </div>
+
+  <script>
+    var gk_isXlsx = false;
+    var gk_xlsxFileLookup = {};
+    var gk_fileData = {};
+    function filledCell(cell) {
+      return cell !== '' && cell != null;
+    }
+    function loadFileData(filename) {
+      if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+        try {
+          var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+          var firstSheetName = workbook.SheetNames[0];
+          var worksheet = workbook.Sheets[firstSheetName];
+          var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+          var filteredData = jsonData.filter(row => row.some(filledCell));
+          var headerRowIndex = filteredData.findIndex((row, index) =>
+            row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+          );
+          if (headerRowIndex === -1 || headerRowIndex > 25) {
+            headerRowIndex = 0;
+          }
+          var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+          csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+          return csv;
+        } catch (e) {
+          console.error(e);
+          return "";
+        }
+      }
+      return gk_fileData[filename] || "";
+    }
+
+    function calculateSpacing() {
+      // Get input elements
+      const measurementType = document.getElementById('measurementType').value;
+      const lengthInput = document.getElementById('length');
+      const thicknessInput = document.getElementById('thickness');
+      const quantityInput = document.getElementById('quantity');
+      const outputDiv = document.getElementById('output');
+      const printButton = document.getElementById('printButton');
+
+      // Remove error class if present
+      lengthInput.classList.remove("error");
+      thicknessInput.classList.remove("error");
+      quantityInput.classList.remove("error");
+
+      // Get input values
+      const length = parseFloat(lengthInput.value);
+      const thickness = parseFloat(thicknessInput.value);
+      const quantity = parseInt(quantityInput.value);
+
+      // Clear previous results
+      outputDiv.innerHTML = '';
+
+      // Validate inputs
+      if (isNaN(length) || lengthInput.value.trim() === '') {
+        lengthInput.classList.add("error");
+        outputDiv.innerHTML = '<p style="color: red;">Please enter a valid number for length.</p>';
+        return;
+      }
+      if (isNaN(thickness) || thicknessInput.value.trim() === '') {
+        thicknessInput.classList.add("error");
+        outputDiv.innerHTML = '<p style="color: red;">Please enter a valid number for thickness.</p>';
+        return;
+      }
+      if (isNaN(quantity) || quantityInput.value.trim() === '') {
+        quantityInput.classList.add("error");
+        outputDiv.innerHTML = '<p style="color: red;">Please enter a valid number for quantity.</p>';
+        return;
+      }
+      if (length <= 0 || thickness < 0 || quantity < 1) {
+        outputDiv.innerHTML = '<p style="color: red;">Length must be positive, thickness cannot be negative, and quantity must be at least 1.</p>';
+        if (length <= 0) lengthInput.classList.add("error");
+        if (thickness < 0) thicknessInput.classList.add("error");
+        if (quantity < 1) quantityInput.classList.add("error");
+        return;
+      }
+
+      // Calculate spacing
+      let availableSpace, totalThickness, startOffset;
+      if (measurementType === 'outside') {
+        totalThickness = thickness * (quantity + 2); // Include top and bottom shelves
+        startOffset = thickness; // Start from bottom of top shelf
+        if (totalThickness >= length) {
+          outputDiv.innerHTML = '<p style="color: red;">Total thickness (including top and bottom shelves) cannot exceed or equal total length.</p>';
+          lengthInput.classList.add("error");
+          thicknessInput.classList.add("error");
+          return;
+        }
+        availableSpace = length - totalThickness;
+      } else if (measurementType === 'outsideToInside') {
+        totalThickness = thickness * (quantity + 1); // Include top shelf only
+        startOffset = thickness; // Start from bottom of top shelf
+        if (totalThickness >= length) {
+          outputDiv.innerHTML = '<p style="color: red;">Total thickness (including top shelf) cannot exceed or equal total length.</p>';
+          lengthInput.classList.add("error");
+          thicknessInput.classList.add("error");
+          return;
+        }
+        availableSpace = length - totalThickness;
+      } else {
+        totalThickness = thickness * quantity; // Only middle shelves
+        startOffset = 0; // Start from inside of top shelf
+        if (totalThickness >= length) {
+          outputDiv.innerHTML = '<p style="color: red;">Total thickness cannot exceed or equal total length.</p>';
+          thicknessInput.classList.add("error");
+          lengthInput.classList.add("error");
+          return;
+        }
+        availableSpace = length - totalThickness;
+      }
+
+      const spaceBetweenItems = availableSpace / (quantity + 1);
+
+      // Generate running measurements
+      let output = `Timestamp: ${getCurrentTimestamp()}<br>
+                    Type: ${measurementType === 'outside' ? 'Outside to Outside' : measurementType === 'outsideToInside' ? 'Outside to Inside' : 'Inside to Inside'}<br>
+                    Total Length: ${Math.round(length)}<br>
+                    Thickness: ${Math.round(thickness)}<br>
+                    Quantity: ${quantity}<br>
+                    Gap: ${Math.round(spaceBetweenItems)}<br>
+                    <table>
+                      <tr><th>#</th><th>Running Edge</th><th>Running Centers</th></tr>`;
+
+      let currentPosition = spaceBetweenItems + startOffset;
+      for (let i = 1; i <= quantity; i++) {
+        const centerPosition = currentPosition + (thickness / 2);
+        output += `<tr><td>${i}</td><td>${Math.round(currentPosition)}</td><td>${Math.round(centerPosition)}</td></tr>`;
+        currentPosition += thickness + spaceBetweenItems;
+      }
+
+      output += '</table>';
+      outputDiv.innerHTML = output;
+      printButton.style.display = "block"; // Show the print button
+    }
+
+    function printOutput() {
+      const outputDiv = document.getElementById("output");
+      const printWindow = window.open('', '', 'width=600,height=400');
+      printWindow.document.open();
+      printWindow.document.write('<html><head><title>Print</title>');
+      printWindow.document.write('<style>body {font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; text-align: center;} table {width: 100%; border-collapse: collapse; margin-top: 10px;} th, td {border: 1px solid #ddd; padding: 8px; text-align: center;} th {background-color: #f2f2f2;}</style>');
+      printWindow.document.write('</head><body>');
+      printWindow.document.write('<h1>Spacing Calculator</h1>');
+      printWindow.document.write(outputDiv.innerHTML);
+      printWindow.document.write('</body></html>');
+      printWindow.document.close();
+      printWindow.print();
+    }
+
+    function getCurrentTimestamp() {
+      return moment().format('YYYY-MM-DD HH:mm:ss');
+    }
+
+    // Add event listeners for Enter key
+    document.getElementById("length").addEventListener("keypress", function(event) {
+      if (event.keyCode === 13) {
+        calculateSpacing();
+      }
+    });
+    document.getElementById("thickness").addEventListener("keypress", function(event) {
+      if (event.keyCode === 13) {
+        calculateSpacing();
+      }
+    });
+    document.getElementById("quantity").addEventListener("keypress", function(event) {
+      if (event.keyCode === 13) {
+        calculateSpacing();
+      }
+    });
+  </script>
+</body>
+</html>
