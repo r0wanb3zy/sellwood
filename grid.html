@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=5, viewport-fit=cover"
+  />
   <title>2100×3700 mm Grid Plotter (no labels)</title>
   <style>
     :root {
@@ -74,7 +77,7 @@
       height: 100%;
       display: block;
       background: #fff;
-      touch-action: none;
+      touch-action: pinch-zoom; /* allow pinch zoom (cannot zoom out past 1× due to viewport meta) */
     }
   </style>
 </head>
@@ -82,11 +85,9 @@
   <div class="app">
     <div class="controls" aria-label="Plot point controls">
       <div class="row">
-
         <input id="xmm" type="number" step="1" value="0" inputmode="decimal" />
       </div>
       <div class="row">
-
         <input id="ymm" type="number" step="1" value="0" inputmode="decimal" />
       </div>
     </div>
@@ -261,26 +262,26 @@
     function plot() { draw(); }
 
     // Draw the SVG on top of the grid at 1:1 mm scale, anchored at 0 mm
-function drawSvgOverlay({ scale, gridLeft, gridTop }) {
-  if (!svgInfo || !svgInfo.img || !svgInfo.mmSize.width || !svgInfo.mmSize.height) return;
+    function drawSvgOverlay({ scale, gridLeft, gridTop }) {
+      if (!svgInfo || !svgInfo.img || !svgInfo.mmSize.width || !svgInfo.mmSize.height) return;
 
-  const destW = svgInfo.mmSize.width * scale;   // px
-  const destH = svgInfo.mmSize.height * scale;  // px
-  const dx = gridLeft;                          // align left to grid
-  const dy = gridTop;                           // align top to extended grid
+      const destW = svgInfo.mmSize.width * scale;   // px
+      const destH = svgInfo.mmSize.height * scale;  // px
+      const dx = gridLeft;                          // align left to grid
+      const dy = gridTop;                           // align top to extended grid
 
-  ctx.save();
-  // Optional: clip to the grid bounds (includes the extra top mm)
-  ctx.beginPath();
-  ctx.rect(gridLeft, gridTop, MM_W * scale, (MM_H + EXTRA_TOP_MM) * scale);
-  ctx.clip();
+      ctx.save();
+      // Optional: clip to the grid bounds (includes the extra top mm)
+      ctx.beginPath();
+      ctx.rect(gridLeft, gridTop, MM_W * scale, (MM_H + EXTRA_TOP_MM) * scale);
+      ctx.clip();
 
-  // Optional: keep the grid visible on top
-  // ctx.globalAlpha = 0.95;
+      // Optional: keep the grid visible on top
+      // ctx.globalAlpha = 0.95;
 
-  ctx.drawImage(svgInfo.img, dx, dy, destW, destH);
-  ctx.restore();
-}
+      ctx.drawImage(svgInfo.img, dx, dy, destW, destH);
+      ctx.restore();
+    }
 
     // Helpers: load/measure the SVG in mm
     function parseLengthToMm(val) {
