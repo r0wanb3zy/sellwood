@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Make the VK (virtual keyboard) overlay content instead of resizing it, where supported -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=overlays-content" />
   <title>2100×3700 mm Grid Plotter (no labels)</title>
   <style>
     :root {
@@ -14,10 +15,12 @@
     }
     * { box-sizing: border-box; }
     html, body { height: 100%; margin: 0; }
+    /* Prevent window scrolling that can fight with gestures */
     body {
       font: 14px/1.3 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Helvetica, Arial;
       color: #222;
       background: #fff;
+      overflow: hidden; /* keep viewport stable when VK shows */
     }
 
     /* App layout: controls on top, grid fills remaining height */
@@ -27,8 +30,9 @@
       height: 100vh; /* fallback */
       width: 100%;
     }
-    @supports (height: 100dvh) {
-      .app { height: 100dvh; } /* more accurate on mobile browsers */
+    /* Prefer the largest viewport height so the grid doesn't shrink under VK */
+    @supports (height: 100lvh) {
+      .app { height: 100lvh; }
     }
 
     /* Top-centered controls */
@@ -42,6 +46,9 @@
       background: var(--ui-bg);
       border-bottom: 1px solid var(--ui-border);
       flex-wrap: wrap;
+      position: sticky; /* keeps controls at top if anything scrolls */
+      top: 0;
+      z-index: 10;
     }
     .row {
       display: flex;
@@ -57,6 +64,7 @@
       background: #fff;
       color: #111;
       -moz-appearance: textfield;
+      font-size: 16px; /* iOS: prevent auto zoom on focus */
     }
     input::-webkit-outer-spin-button,
     input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
@@ -68,13 +76,16 @@
       min-height: 0;
       position: relative;
       background: #fff;
+      overscroll-behavior: contain; /* avoid rubber-banding while panning/zooming */
     }
     #grid {
       width: 100%;
       height: 100%;
       display: block;
       background: #fff;
-      touch-action: none;
+      touch-action: none; /* we implement pan/zoom ourselves */
+      user-select: none;
+      -webkit-user-select: none;
     }
   </style>
 </head>
@@ -82,11 +93,9 @@
   <div class="app">
     <div class="controls" aria-label="Plot point controls">
       <div class="row">
-
         <input id="xmm" type="number" step="1" value="0" inputmode="decimal" />
       </div>
       <div class="row">
-
         <input id="ymm" type="number" step="1" value="0" inputmode="decimal" />
       </div>
     </div>
@@ -100,12 +109,12 @@
   (function () {
     const MM_W = 2100;      // grid width in mm
     const MM_H = 3700;      // grid height in mm
-    const EXTRA_TOP_MM = 130; // NEW: visible headroom above 0 (negative Y)
+    const EXTRA_TOP_MM = 130; // visible headroom above 0 (negative Y)
     const MAJOR_MM = 100;   // major step
     const MINOR_MM = 50;    // minor step
     const FIT = 'height';   // fill stage height
 
-    // Your SVG
+    // Overlay SVG
     const SVG_URL = 'https://raw.githubusercontent.com/r0wanb3zy/sellwood/e57f46fdb25d93cff84288774fd70e243d472d02/images/grid/D36.svg';
 
     const canvas = document.getElementById('grid');
@@ -116,7 +125,18 @@
     const stage = document.querySelector('.stage');
 
     let dpr = Math.max(1, window.devicePixelRatio || 1);
-    let svgInfo = null; // holds loaded SVG + size in mm
+    let svgInfo = null; // loaded SVG + size in mm
+
+    // View transform for pinch-zoom + pan
+    const view = {
+      zoom: 1,
+      panX: 0,
+      panY: 0,
+      minZoom: 0.5,
+      maxZoom: 8
+    };
+
+    function clamp(v, a, b) { return Math.min(b, Math.max(a, v)); }
 
     function resizeCanvas() {
       dpr = Math.max(1, window.devicePixelRatio || 1);
@@ -130,7 +150,6 @@
     function computeLayout() {
       const width = canvas.width / dpr;
       const height = canvas.height / dpr;
-
       const MM_TOTAL_H = MM_H + EXTRA_TOP_MM;
 
       let scale, gridW, gridH, gridLeft, gridTop;
@@ -171,7 +190,16 @@
     }
 
     function draw() {
-      const { width, height, scale, gridW, gridH, gridLeft, gridTop } = computeLayout();
+      const base = computeLayout();
+
+      // Apply interactive transform
+      const scale = base.scale * view.zoom;
+      const gridLeft = base.gridLeft + view.panX;
+      const gridTop = base.gridTop + view.panY;
+      const gridW = MM_W * scale;
+      const gridH = (MM_H + EXTRA_TOP_MM) * scale;
+
+      const { width, height } = base;
       const { minor, major } = lineWidths();
 
       // Clear
@@ -180,7 +208,7 @@
       ctx.fillRect(0, 0, width, height);
 
       drawGrid({ scale, gridW, gridH, gridLeft, gridTop, minorLW: minor, majorLW: major });
-      drawSvgOverlay({ scale, gridLeft, gridTop }); // anchored to 0 mm (below)
+      drawSvgOverlay({ scale, gridLeft, gridTop });
       drawDot({ scale, gridLeft, gridTop });
     }
 
@@ -200,7 +228,7 @@
       ctx.strokeStyle = minorColor;
       ctx.lineWidth = minorLW;
 
-      // Vertical (X) minor lines unchanged
+      // Vertical (X) minor lines
       for (let xm = MINOR_MM; xm < MM_W; xm += MINOR_MM) {
         if (xm % MAJOR_MM === 0) continue;
         const x = crispCoord(gridLeft + xm * scale, ctx.lineWidth);
@@ -246,7 +274,7 @@
       if (!isFinite(xmm) || !isFinite(ymm)) return;
 
       const x = gridLeft + xmm * scale;
-      const y = gridTop + (EXTRA_TOP_MM + ymm) * scale; // shift by the extra top mm
+      const y = gridTop + (EXTRA_TOP_MM + ymm) * scale;
       const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#e53935';
 
       const r = 2.5;
@@ -258,29 +286,24 @@
       ctx.restore();
     }
 
-    function plot() { draw(); }
-
     // Draw the SVG on top of the grid at 1:1 mm scale, anchored at 0 mm
-function drawSvgOverlay({ scale, gridLeft, gridTop }) {
-  if (!svgInfo || !svgInfo.img || !svgInfo.mmSize.width || !svgInfo.mmSize.height) return;
+    function drawSvgOverlay({ scale, gridLeft, gridTop }) {
+      if (!svgInfo || !svgInfo.img || !svgInfo.mmSize.width || !svgInfo.mmSize.height) return;
 
-  const destW = svgInfo.mmSize.width * scale;   // px
-  const destH = svgInfo.mmSize.height * scale;  // px
-  const dx = gridLeft;                          // align left to grid
-  const dy = gridTop;                           // align top to extended grid
+      const destW = svgInfo.mmSize.width * scale;   // px
+      const destH = svgInfo.mmSize.height * scale;  // px
+      const dx = gridLeft;                          // align left to grid
+      const dy = gridTop;                           // align top to extended grid
 
-  ctx.save();
-  // Optional: clip to the grid bounds (includes the extra top mm)
-  ctx.beginPath();
-  ctx.rect(gridLeft, gridTop, MM_W * scale, (MM_H + EXTRA_TOP_MM) * scale);
-  ctx.clip();
+      ctx.save();
+      // Clip to the grid bounds (includes the extra top mm)
+      ctx.beginPath();
+      ctx.rect(gridLeft, gridTop, MM_W * scale, (MM_H + EXTRA_TOP_MM) * scale);
+      ctx.clip();
 
-  // Optional: keep the grid visible on top
-  // ctx.globalAlpha = 0.95;
-
-  ctx.drawImage(svgInfo.img, dx, dy, destW, destH);
-  ctx.restore();
-}
+      ctx.drawImage(svgInfo.img, dx, dy, destW, destH);
+      ctx.restore();
+    }
 
     // Helpers: load/measure the SVG in mm
     function parseLengthToMm(val) {
@@ -365,11 +388,124 @@ function drawSvgOverlay({ scale, gridLeft, gridTop }) {
     }
 
     // Dynamic inputs
-    xInput.addEventListener('input', plot);
-    yInput.addEventListener('input', plot);
+    xInput.addEventListener('input', draw);
+    yInput.addEventListener('input', draw);
     [xInput, yInput].forEach(el =>
-      el.addEventListener('keydown', e => { if (e.key === 'Enter') plot(); })
+      el.addEventListener('keydown', e => { if (e.key === 'Enter') draw(); })
     );
+
+    // ----- Pointer interactions: pan + pinch zoom -----
+    const active = new Map();
+    let gesture = null;
+    let rafId = 0;
+    function requestDraw() {
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => { rafId = 0; draw(); });
+    }
+
+    function getLocal(e) {
+      const r = canvas.getBoundingClientRect();
+      return { x: e.clientX - r.left, y: e.clientY - r.top };
+    }
+
+    canvas.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      canvas.setPointerCapture(e.pointerId);
+      const p = getLocal(e);
+      active.set(e.pointerId, p);
+
+      if (active.size === 2) {
+        startPinch();
+      } else if (active.size === 1) {
+        gesture = { type: 'pan', last: p };
+      }
+    }, { passive: false });
+
+    canvas.addEventListener('pointermove', (e) => {
+      if (!active.has(e.pointerId)) return;
+      e.preventDefault();
+      const p = getLocal(e);
+      active.set(e.pointerId, p);
+
+      if (active.size === 1 && gesture && gesture.type === 'pan') {
+        const dx = p.x - gesture.last.x;
+        const dy = p.y - gesture.last.y;
+        view.panX += dx;
+        view.panY += dy;
+        gesture.last = p;
+        requestDraw();
+      } else if (active.size >= 2 && gesture && gesture.type === 'pinch') {
+        const pts = [...active.values()];
+        const center = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
+        const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+
+        const base = computeLayout();
+        const targetZoom = clamp(gesture.initZoom * (dist / gesture.initDist), view.minZoom, view.maxZoom);
+
+        const RS0 = gesture.prevRS;
+        const RS1 = base.scale * targetZoom;
+        const r = RS1 / RS0;
+
+        // Translate by center movement
+        view.panX += center.x - gesture.prevCenter.x;
+        view.panY += center.y - gesture.prevCenter.y;
+
+        // Scale around current center
+        view.panX = r * view.panX + (1 - r) * (center.x - base.gridLeft);
+        view.panY = r * view.panY + (1 - r) * (center.y - base.gridTop);
+
+        // Commit
+        view.zoom = targetZoom;
+        gesture.prevCenter = center;
+        gesture.prevRS = RS1;
+        requestDraw();
+      }
+    }, { passive: false });
+
+    function startPinch() {
+      const pts = [...active.values()];
+      const center = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
+      const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+      const base = computeLayout();
+      gesture = {
+        type: 'pinch',
+        initDist: dist,
+        initZoom: view.zoom,
+        prevCenter: center,
+        prevRS: base.scale * view.zoom
+      };
+    }
+
+    function endPointer(e) {
+      if (active.has(e.pointerId)) active.delete(e.pointerId);
+      if (active.size === 0) {
+        gesture = null;
+      } else if (active.size === 1) {
+        // switch back to pan with the remaining pointer
+        const remaining = [...active.values()][0];
+        gesture = { type: 'pan', last: remaining };
+      }
+    }
+
+    canvas.addEventListener('pointerup', endPointer, { passive: false });
+    canvas.addEventListener('pointercancel', endPointer, { passive: false });
+    canvas.addEventListener('pointerleave', endPointer, { passive: false });
+
+    // Optional: double-tap to reset view
+    let lastTapTime = 0;
+    canvas.addEventListener('pointerdown', (e) => {
+      if (active.size > 1) return;
+      const now = performance.now();
+      if (now - lastTapTime < 300) {
+        // reset
+        view.zoom = 1;
+        view.panX = 0;
+        view.panY = 0;
+        draw();
+      }
+      lastTapTime = now;
+    });
+
   })();
 </script>
 </body>
