@@ -106,7 +106,7 @@
     const FIT = 'height';   // fill stage height
 
     // Your SVG
-    const SVG_URL = 'https://raw.githubusercontent.com/r0wanb3zy/sellwood/e57f46fdb25d93cff84288774fd70e243d472d02/images/grid/D36.svg';
+    const SVG_URL = 'https://raw.githubusercontent.com/r0wanb3zy/sellwood/070ff3cb9184ce91bcc96bb9c2a23146a4f77e3c/images/D36-01.svg';
 
     const canvas = document.getElementById('grid');
     const ctx = canvas.getContext('2d', { alpha: false });
@@ -249,7 +249,7 @@
       const y = gridTop + (EXTRA_TOP_MM + ymm) * scale; // shift by the extra top mm
       const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#e53935';
 
-      const r = 2.5;
+      const r = 3;
       ctx.save();
       ctx.beginPath();
       ctx.arc(x, y, r, 0, Math.PI * 2);
