@@ -215,63 +215,62 @@
     }
 
     function drawGrid({ scale, gridW, gridH, gridLeft, gridTop, minorLW, majorLW }) {
-      const minorColor = getComputedStyle(document.documentElement).getPropertyValue('--minor').trim() || '#d9d9d9';
-      const majorColor = getComputedStyle(document.documentElement).getPropertyValue('--major').trim() || '#7a7a7a';
+  const minorColor = getComputedStyle(document.documentElement).getPropertyValue('--minor').trim() || '#d9d9d9';
+  const majorColor = getComputedStyle(document.documentElement).getPropertyValue('--major').trim() || '#7a7a7a';
 
-      const yMin = -EXTRA_TOP_MM;
-      const yMax = MM_H;
+  const yMin = -EXTRA_TOP_MM;
+  const yMax = MM_H;
 
-      ctx.save();
+  ctx.save();
+  // Extend clipping region by 1 CSS pixel to ensure right border is fully visible
+  const clipPadding = 1 / dpr; // 1 device pixel in CSS pixels
+  ctx.beginPath();
+  ctx.rect(gridLeft, gridTop, gridW + clipPadding, gridH);
+  ctx.clip();
 
-      // Expand the clipping rect by half the stroke width so edge strokes aren’t clipped
-      const half = Math.max(minorLW, majorLW) / 2; // CSS px
-      ctx.beginPath();
-      ctx.rect(gridLeft - half, gridTop - half, gridW + 2 * half, gridH + 2 * half);
-      ctx.clip();
+  // Minor lines (every 50 mm)
+  ctx.strokeStyle = minorColor;
+  ctx.lineWidth = minorLW;
 
-      // Minor lines (every 50 mm)
-      ctx.strokeStyle = minorColor;
-      ctx.lineWidth = minorLW;
+  // Vertical (X) minor lines
+  for (let xm = MINOR_MM; xm < MM_W; xm += MINOR_MM) {
+    if (xm % MAJOR_MM === 0) continue;
+    const x = crispCoord(gridLeft + xm * scale, ctx.lineWidth);
+    ctx.beginPath();
+    ctx.moveTo(x, gridTop);
+    ctx.lineTo(x, gridTop + gridH);
+    ctx.stroke();
+  }
+  // Horizontal (Y) minor lines include negatives
+  for (let ym = Math.ceil(yMin / MINOR_MM) * MINOR_MM; ym < yMax; ym += MINOR_MM) {
+    if (ym % MAJOR_MM === 0) continue;
+    const y = crispCoord(gridTop + (ym + EXTRA_TOP_MM) * scale, ctx.lineWidth);
+    ctx.beginPath();
+    ctx.moveTo(gridLeft, y);
+    ctx.lineTo(gridLeft + gridW, y);
+    ctx.stroke();
+  }
 
-      // Vertical (X) minor lines
-      for (let xm = MINOR_MM; xm < MM_W; xm += MINOR_MM) {
-        if (xm % MAJOR_MM === 0) continue;
-        const x = crispCoord(gridLeft + xm * scale, ctx.lineWidth);
-        ctx.beginPath();
-        ctx.moveTo(x, gridTop);
-        ctx.lineTo(x, gridTop + gridH);
-        ctx.stroke();
-      }
-      // Horizontal (Y) minor lines include negatives
-      for (let ym = Math.ceil(yMin / MINOR_MM) * MINOR_MM; ym < yMax; ym += MINOR_MM) {
-        if (ym % MAJOR_MM === 0) continue;
-        const y = crispCoord(gridTop + (ym + EXTRA_TOP_MM) * scale, ctx.lineWidth);
-        ctx.beginPath();
-        ctx.moveTo(gridLeft, y);
-        ctx.lineTo(gridLeft + gridW, y);
-        ctx.stroke();
-      }
+  // Major lines (every 100 mm)
+  ctx.strokeStyle = majorColor;
+  ctx.lineWidth = majorLW;
 
-      // Major lines (every 100 mm)
-      ctx.strokeStyle = majorColor;
-      ctx.lineWidth = majorLW;
-
-      for (let xm = 0; xm <= MM_W; xm += MAJOR_MM) {
-        const x = crispCoord(gridLeft + xm * scale, ctx.lineWidth);
-        ctx.beginPath();
-        ctx.moveTo(x, gridTop);
-        ctx.lineTo(x, gridTop + gridH);
-        ctx.stroke();
-      }
-      for (let ym = Math.ceil(yMin / MAJOR_MM) * MAJOR_MM; ym <= yMax; ym += MAJOR_MM) {
-        const y = crispCoord(gridTop + (ym + EXTRA_TOP_MM) * scale, ctx.lineWidth);
-        ctx.beginPath();
-        ctx.moveTo(gridLeft, y);
-        ctx.lineTo(gridLeft + gridW, y);
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
+  for (let xm = 0; xm <= MM_W; xm += MAJOR_MM) {
+    const x = crispCoord(gridLeft + xm * scale, ctx.lineWidth);
+    ctx.beginPath();
+    ctx.moveTo(x, gridTop);
+    ctx.lineTo(x, gridTop + gridH);
+    ctx.stroke();
+  }
+  for (let ym = Math.ceil(yMin / MAJOR_MM) * MAJOR_MM; ym <= yMax; ym += MAJOR_MM) {
+    const y = crispCoord(gridTop + (ym + EXTRA_TOP_MM) * scale, ctx.lineWidth);
+    ctx.beginPath();
+    ctx.moveTo(gridLeft, y);
+    ctx.lineTo(gridLeft + gridW, y);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
 
     function drawDot({ scale, gridLeft, gridTop }) {
       const xmm = parseFloat(xInput.value);
