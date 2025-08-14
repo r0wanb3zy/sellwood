@@ -58,13 +58,14 @@
     }
     label { font-size: 13px; }
     input[type="number"] {
-      width: 80px;
+      width: 60px;
       padding: 8px 10px;
       border: 1px solid var(--ui-border);
       border-radius: 8px;
       background: #fff;
       color: #111;
       -moz-appearance: textfield;
+      text-align: center;
     }
     select {
       padding: 8px 10px;
@@ -366,8 +367,11 @@
 
       const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#e53935';
 
-      // Dot: constant CSS pixel size, center aligned to device pixel grid for crispness
-      const rCss = 4; // radius in CSS px (consistent visual size)
+      // Keep dot a constant on-screen size (compensate for page pinch-zoom)
+      const pageZoom = (window.visualViewport && window.visualViewport.scale) ? window.visualViewport.scale : 1;
+      const rCssBase = 4;           // base radius in CSS px at pageZoom = 1
+      const rCss = rCssBase / pageZoom; // CHANGED: normalize by visual viewport zoom
+
       const cx = alignToDevicePixel(x);
       const cy = alignToDevicePixel(y);
 
