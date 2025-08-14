@@ -7,7 +7,7 @@
       content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=5, viewport-fit=cover"
   />
   <title>2100×3700 mm Grid Plotter (no labels)</title>
-  <style>
+   <style>
     :root {
       --ui-bg: #f8f9fb;
       --ui-border: rgba(0, 0, 0, 0.12);
@@ -64,15 +64,25 @@
       border-radius: 8px;
       background: #fff;
       color: #111;
-      -moz-appearance: textfield;
-      text-align: center;
+      -moz-appearance: textfield; /* Removes spinner in Firefox */
+      -webkit-appearance: none; /* Removes spinner in Chrome/Safari */
+      appearance: none; /* Standard property to remove spinner */
+      text-align: center; /* Centers text and placeholder */
     }
+
     select {
+      width: 80px; /* Increased width to prevent text cutoff */
       padding: 8px 10px;
       border: 1px solid var(--ui-border);
       border-radius: 8px;
       background: #fff;
       color: #111;
+      text-align: center; /* Centers text in select */
+      text-align-last: center; /* Ensures text is centered in dropdown options */
+      -webkit-appearance: none; /* Removes default arrow in Chrome/Safari */
+      -moz-appearance: none; /* Removes default arrow in Firefox */
+      appearance: none; /* Standard property to remove default arrow */
+      background-image: none; /* Ensures no default arrow is shown */
     }
 
     input::placeholder { color: #9aa3ad; opacity: 1; }
