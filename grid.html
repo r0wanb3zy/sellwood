@@ -431,20 +431,24 @@
     }
 
     // Select all text when focusing inputs
-    function enableSelectAllOnFocus(el) {
-      el.addEventListener('focus', () => {
-        // Next frame ensures focus has landed before selection
-        requestAnimationFrame(() => {
-          el.select();
-          // For iOS
-          try { el.setSelectionRange(0, 9999); } catch (e) {}
-        });
-      });
-      // Prevent mouseup from clearing the selection
-      el.addEventListener('mouseup', e => e.preventDefault());
-      // Also handle touch
-      el.addEventListener('touchend', e => e.preventDefault(), { passive: false });
-    }
+function enableSelectAllOnFocus(el) {
+  el.addEventListener('focus', () => {
+    // Delay to let the focus land, then select all
+    setTimeout(() => {
+      try {
+        el.select();
+        el.setSelectionRange?.(0, 9999);
+      } catch (e) {}
+    }, 0);
+  });
+
+  // Only prevent mouseup on non-touch devices so selection stays on desktop
+  const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+  if (!isTouch) {
+    el.addEventListener('mouseup', e => e.preventDefault());
+  }
+  // No preventDefault on touchend — that was blocking focus on mobile
+}
 
     // Init: restore saved values before first draw
     restoreXY();
