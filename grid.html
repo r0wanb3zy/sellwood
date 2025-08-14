@@ -198,6 +198,14 @@
       return MODELS[key];
     }
 
+// View transform for desktop zoom/pan
+const view = { scale: 1, x: 0, y: 0 };
+const VIEW_MIN = 1;      // don't allow zooming out past the default fit
+const VIEW_MAX = 16;
+
+    function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+    function resetView() { view.scale = 1; view.x = 0; view.y = 0; draw(); }
+
     // Throttle expensive resizes to animation frames
     let rafId = 0;
     function scheduleResize() {
@@ -274,17 +282,28 @@
     }
 
     function draw() {
-      const { width, height, scale, gridW, gridH, gridLeft, gridTop, extraTop } = computeLayout();
-      const { minor, major } = lineWidths(scale);
+      const { width, height, scale: baseScale, gridLeft: baseLeft, gridTop: baseTop, extraTop } = computeLayout();
+
+      // Effective mm->CSS px scale with view zoom
+      const mm2px = baseScale * view.scale;
 
       // Clear
       ctx.clearRect(0, 0, width, height);
       ctx.fillStyle = '#fff';
       ctx.fillRect(0, 0, width, height);
 
-      drawGrid({ scale, gridW, gridH, gridLeft, gridTop, minorLW: minor, majorLW: major, extraTop });
-      drawSvgOverlay({ scale, gridLeft, gridTop, extraTop }); // overlay (if any)
-      drawDot({ scale, gridLeft, gridTop, extraTop });
+      const gridLeft = baseLeft + view.x;
+      const gridTop = baseTop + view.y;
+
+      const { minor, major } = lineWidths(mm2px);
+
+      // Grid size in CSS px with zoom included
+      const gridW = MM_W * mm2px;
+      const gridH = (MM_H + extraTop) * mm2px;
+
+      drawGrid({ scale: mm2px, gridW, gridH, gridLeft, gridTop, minorLW: minor, majorLW: major, extraTop });
+      drawSvgOverlay({ scale: mm2px, gridLeft, gridTop, extraTop }); // overlay (if any)
+      drawDot({ scale: mm2px, gridLeft, gridTop, extraTop });
     }
 
     function drawGrid({ scale, gridW, gridH, gridLeft, gridTop, minorLW, majorLW, extraTop }) {
@@ -365,7 +384,7 @@
       ctx.restore();
     }
 
-    // Draw the SVG on top of the grid at 1:1 mm scale
+    // Draw the SVG on top of the grid at 1:1 mm scale (with view zoom)
     function drawSvgOverlay({ scale, gridLeft, gridTop, extraTop }) {
       if (!svgInfo || !svgInfo.img || !svgInfo.mmSize.width || !svgInfo.mmSize.height) return;
 
@@ -502,6 +521,43 @@
       }
     }
 
+    // Desktop wheel-to-zoom centered at cursor
+    function wheelZoomHandler(e) {
+      // Only act when the wheel is over the canvas
+      e.preventDefault();
+
+      const rect = canvas.getBoundingClientRect();
+      const px = e.clientX - rect.left;
+      const py = e.clientY - rect.top;
+
+      const { scale: baseScale, gridLeft: baseLeft, gridTop: baseTop } = computeLayout();
+
+      // Normalize delta to "pixels"
+      const deltaPx = (e.deltaMode === 1) ? (e.deltaY * 16)
+                    : (e.deltaMode === 2) ? (e.deltaY * rect.height)
+                    : e.deltaY;
+
+      // Zoom factor: 300px of wheel = 2x change
+      const factor = Math.exp(-deltaPx / 300);
+
+      const prevVS = view.scale;
+      const nextVS = clamp(prevVS * factor, VIEW_MIN, VIEW_MAX);
+      if (nextVS === prevVS) return;
+
+      // World coords under the cursor before zoom (in mm space, with extraTop folded into Y later)
+      const curScalePxPerMm = baseScale * prevVS;
+      const gx = (px - (baseLeft + view.x)) / curScalePxPerMm; // mm
+      const gyPlus = (py - (baseTop + view.y)) / curScalePxPerMm; // mm including extraTop
+
+      // Apply zoom while keeping (gx, gyPlus) under the cursor
+      view.scale = nextVS;
+      const newScalePxPerMm = baseScale * view.scale;
+      view.x = px - baseLeft - gx * newScalePxPerMm;
+      view.y = py - baseTop - gyPlus * newScalePxPerMm;
+
+      draw();
+    }
+
     // Init: start with no model selected
     restoreXY();
     resizeCanvas(); // draws grid only (no overlay by default)
@@ -543,6 +599,12 @@
       try { localStorage.removeItem(STORAGE_KEY_XY); } catch (e) {}
       draw(); // with blanks, dot is at 0,0 (default)
     });
+
+    // Wheel-to-zoom on desktop (or any device with a wheel)
+    canvas.addEventListener('wheel', wheelZoomHandler, { passive: false });
+
+    // Double-click to reset view
+    canvas.addEventListener('dblclick', resetView);
   })();
 </script>
 </body>
