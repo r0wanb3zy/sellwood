@@ -638,21 +638,13 @@
 
     [xInput, yInput].forEach(enableSelectAllOnFocus);
 
-    // Reset button: no model + clear inputs + reset view + clear persistence
-    clearBtn.addEventListener('click', () => {
-      // Inputs
-      xInput.value = '';
-      yInput.value = '';
-      try { localStorage.removeItem(STORAGE_KEY_XY); } catch (e) {}
-
-      // Model
-      modelSelect.value = '';
-      setModel('');
-      try { localStorage.removeItem(STORAGE_KEY_MODEL); } catch (e) {}
-
-      // View
-      resetView();
-    });
+// Reset button: set dot to 0,0, keep current model and view
+clearBtn.addEventListener('click', () => {
+  xInput.value = String(DEFAULT_X);
+  yInput.value = String(DEFAULT_Y);
+  saveXY();
+  draw();
+});
 
     canvas.addEventListener('wheel', wheelZoomHandler, { passive: false });
     canvas.addEventListener('dblclick', resetView);
