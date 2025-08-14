@@ -114,11 +114,12 @@
 <body>
   <div class="app">
     <div class="controls" aria-label="Plot point controls">
-      <!-- New: model select on the left -->
+      <!-- Model select with a placeholder (no model selected by default) -->
       <div class="row">
         <select id="modelSelect" aria-label="Choose model">
-        <option value="P36">P36</option>
-        <option value="D36">D36</option>
+          <option value="" selected disabled>Model</option>
+          <option value="P36">P36</option>
+          <option value="D36">D36</option>
         </select>
       </div>
 
@@ -152,7 +153,7 @@
 
     // Models config (add more here later)
     const MODELS = {
-              P36: {
+      P36: {
         label: 'P36',
         extraTop: 140,
         svg: 'https://raw.githubusercontent.com/r0wanb3zy/sellwood/e7a8c0d9e8bbdc7fac94b68faf62dded21ab366e/images/grid/P36.svg'
@@ -174,9 +175,12 @@
     const stage = document.querySelector('.stage');
 
     const STORAGE_KEY_XY = 'grid-plotter-xy';
-    const STORAGE_KEY_MODEL = 'grid-plotter-model';
     const DEFAULT_X = 0;
     const DEFAULT_Y = 0;
+
+    // Default to "no model" (no overlay)
+    const DEFAULT_MODEL = '';
+    let selectedModel = DEFAULT_MODEL;
 
     // Effective DPR includes pinch-zoom scale
     let dpr = 1;
@@ -187,11 +191,11 @@
       return Math.min(6, base * zoom);
     }
 
-    let svgInfo = null;      // holds loaded SVG + size in mm
-    let selectedModel = 'D36'; // default; restored from storage
+    let svgInfo = null; // holds loaded SVG + size in mm
 
     function getModelConfig(key = selectedModel) {
-      return MODELS[key] || MODELS.D36;
+      if (!key || !MODELS[key]) return { label: 'None', extraTop: 0, svg: null };
+      return MODELS[key];
     }
 
     // Throttle expensive resizes to animation frames
@@ -279,7 +283,7 @@
       ctx.fillRect(0, 0, width, height);
 
       drawGrid({ scale, gridW, gridH, gridLeft, gridTop, minorLW: minor, majorLW: major, extraTop });
-      drawSvgOverlay({ scale, gridLeft, gridTop, extraTop }); // overlay
+      drawSvgOverlay({ scale, gridLeft, gridTop, extraTop }); // overlay (if any)
       drawDot({ scale, gridLeft, gridTop, extraTop });
     }
 
@@ -446,7 +450,7 @@
       return { img, ...meta };
     }
 
-    // Persistence
+    // Persistence for XY inputs only
     function saveXY() {
       try {
         const data = { x: xInput.value, y: yInput.value };
@@ -463,33 +467,21 @@
       } catch (e) { /* ignore */ }
     }
 
-    function restoreModel() {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY_MODEL);
-        if (saved && MODELS[saved]) {
-          selectedModel = saved;
-        } else {
-          selectedModel = 'D36';
-        }
-      } catch (e) {
-        selectedModel = 'D36';
-      }
-      modelSelect.value = selectedModel;
-    }
-
     function setModel(key) {
-      if (!MODELS[key]) key = 'D36';
-      selectedModel = key;
-      try { localStorage.setItem(STORAGE_KEY_MODEL, selectedModel); } catch (e) {}
+      // If key is invalid, clear to "no model"
+      selectedModel = (key && MODELS[key]) ? key : DEFAULT_MODEL;
 
-      // Clear old overlay, load new one, then draw
+      // Clear old overlay
       svgInfo = null;
-      const { svg } = getModelConfig();
-      loadSvgInfo(svg)
-        .then(info => { svgInfo = info; draw(); })
-        .catch(err => console.error('SVG load/parse failed:', err));
 
-      // Redraw immediately with new extraTop even before image loads
+      const { svg } = getModelConfig();
+      if (svg) {
+        loadSvgInfo(svg)
+          .then(info => { svgInfo = info; draw(); })
+          .catch(err => console.error('SVG load/parse failed:', err));
+      }
+
+      // Redraw immediately (shows grid + dot; overlay appears once loaded)
       draw();
     }
 
@@ -510,11 +502,9 @@
       }
     }
 
-    // Init: restore saved values before first draw
-    restoreModel();
+    // Init: start with no model selected
     restoreXY();
-    setModel(selectedModel);
-    resizeCanvas();
+    resizeCanvas(); // draws grid only (no overlay by default)
 
     // Keep canvas sized to viewport and layout changes
     window.addEventListener('resize', scheduleResize);
@@ -538,7 +528,7 @@
       el.addEventListener('keydown', e => { if (e.key === 'Enter') { saveXY(); draw(); } })
     );
 
-    // Model change
+    // Model change => load overlay
     modelSelect.addEventListener('change', (e) => {
       setModel(e.target.value);
     });
@@ -546,7 +536,7 @@
     // Select-all behavior
     [xInput, yInput].forEach(enableSelectAllOnFocus);
 
-    // Clear button: reset to defaults (keeps model)
+    // Clear button: reset to defaults (keeps model selection untouched)
     clearBtn.addEventListener('click', () => {
       xInput.value = '';
       yInput.value = '';
