@@ -16,8 +16,8 @@
       --accent: #e53935;
 
       /* label styling */
---label-color: #808080; /* Changed from #111 to grey */
-  --label-halo: rgba(255, 255, 255, 0.92);
+      --label-color: #111;
+      --label-halo: rgba(255, 255, 255, 0.92);
     }
     * { box-sizing: border-box; }
     html, body { height: 100%; margin: 0; }
@@ -133,7 +133,9 @@
       height: 100%;
       display: block;
       background: #fff;
-      touch-action: pinch-zoom; /* allow pinch zoom */
+
+      /* IMPORTANT: custom gestures (pinch/pan) handled in JS for consistency with desktop */
+      touch-action: none;
     }
   </style>
 </head>
@@ -210,7 +212,7 @@
 
     let selectedModel = DEFAULT_MODEL;
 
-    // Effective DPR includes pinch-zoom scale
+    // Effective DPR includes pinch-zoom scale (for page zoom outside the canvas)
     let dpr = 1;
     function getEffectiveDpr() {
       const base = Math.max(1, window.devicePixelRatio || 1);
@@ -225,7 +227,7 @@
       return MODELS[key];
     }
 
-    // View transform for desktop zoom/pan
+    // View transform (shared by desktop + mobile)
     const view = { scale: 1, x: 0, y: 0 };
     const VIEW_MIN = 1;
     const VIEW_MAX = 16;
@@ -470,7 +472,6 @@
         const desiredRightX = gridLeft - outsideGap;
 
         // Minimum right-edge X so the whole text stays within the canvas
-        // (since textAlign='right', text occupies [x - width, x])
         const minRightX = margin + maxW + haloPad;
 
         const xRight = alignToDevicePixel(Math.max(desiredRightX, minRightX));
@@ -501,7 +502,7 @@
 
       const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#e53935';
 
-      // Keep dot a constant on-screen size (compensate for page pinch-zoom)
+      // Keep dot a constant on-screen size (compensate for page pinch-zoom outside canvas)
       const pageZoom = (window.visualViewport && window.visualViewport.scale) ? window.visualViewport.scale : 1;
       const rCssBase = 4;           // base radius in CSS px at pageZoom = 1
       const rCss = rCssBase / pageZoom; // normalize by visual viewport zoom
@@ -710,6 +711,122 @@
       draw();
     }
 
+    // Pointer-based pan and pinch (mobile + also works on desktop)
+    const pointers = new Map(); // id -> {x, y}
+    const pan = { active: false, lastX: 0, lastY: 0 };
+    const pinch = {
+      active: false,
+      startScale: 1,
+      startViewX: 0,
+      startViewY: 0,
+      startCenterX: 0,
+      startCenterY: 0,
+      startDist: 0
+    };
+
+    function getCanvasPoint(e) {
+      const rect = canvas.getBoundingClientRect();
+      return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    }
+
+    function updatePointer(e) {
+      pointers.set(e.pointerId, getCanvasPoint(e));
+    }
+
+    function startPinchBaseline() {
+      const pts = [...pointers.values()];
+      if (pts.length < 2) return;
+      const p1 = pts[0], p2 = pts[1];
+      pinch.active = true;
+      pinch.startScale = view.scale;
+      pinch.startViewX = view.x;
+      pinch.startViewY = view.y;
+      pinch.startCenterX = (p1.x + p2.x) / 2;
+      pinch.startCenterY = (p1.y + p2.y) / 2;
+      pinch.startDist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+    }
+
+    function handlePinch() {
+      const pts = [...pointers.values()];
+      if (pts.length < 2) return;
+      const { scale: baseScale, gridLeft: baseLeft, gridTop: baseTop } = computeLayout();
+
+      const p1 = pts[0], p2 = pts[1];
+      const centerX = (p1.x + p2.x) / 2;
+      const centerY = (p1.y + p2.y) / 2;
+      const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+
+      if (!pinch.active) startPinchBaseline();
+      if (pinch.startDist <= 0) return;
+
+      const rawScale = pinch.startScale * (dist / pinch.startDist);
+      const newScale = clamp(rawScale, VIEW_MIN, VIEW_MAX);
+      const ratio = newScale / pinch.startScale;
+
+      // Keep the world point under the initial pinch center "locked" under the current center
+      view.x = pinch.startViewX * ratio + (centerX - baseLeft) - (pinch.startCenterX - baseLeft) * ratio;
+      view.y = pinch.startViewY * ratio + (centerY - baseTop) - (pinch.startCenterY - baseTop) * ratio;
+      view.scale = newScale;
+
+      draw();
+    }
+
+    function onPointerDown(e) {
+      canvas.setPointerCapture?.(e.pointerId);
+      updatePointer(e);
+      e.preventDefault();
+
+      if (pointers.size === 1) {
+        const p = [...pointers.values()][0];
+        pan.active = true;
+        pan.lastX = p.x;
+        pan.lastY = p.y;
+        pinch.active = false;
+      } else if (pointers.size === 2) {
+        pan.active = false;
+        startPinchBaseline();
+      }
+    }
+
+    function onPointerMove(e) {
+      if (!pointers.has(e.pointerId)) return;
+      updatePointer(e);
+      e.preventDefault();
+
+      if (pointers.size === 1 && pan.active) {
+        const p = [...pointers.values()][0];
+        const dx = p.x - pan.lastX;
+        const dy = p.y - pan.lastY;
+        pan.lastX = p.x;
+        pan.lastY = p.y;
+        view.x += dx;
+        view.y += dy;
+        draw();
+      } else if (pointers.size >= 2) {
+        handlePinch();
+      }
+    }
+
+    function onPointerUp(e) {
+      if (pointers.has(e.pointerId)) pointers.delete(e.pointerId);
+      e.preventDefault();
+
+      if (pointers.size === 0) {
+        pan.active = false;
+        pinch.active = false;
+      } else if (pointers.size === 1) {
+        // Continue panning with remaining finger
+        const p = [...pointers.values()][0];
+        pan.active = true;
+        pan.lastX = p.x;
+        pan.lastY = p.y;
+        pinch.active = false;
+      } else if (pointers.size >= 2) {
+        // Rebaseline if pointer count changes
+        startPinchBaseline();
+      }
+    }
+
     // Init
     restoreXY();
     resizeCanvas();
@@ -749,8 +866,16 @@
       draw();
     });
 
+    // Desktop wheel zoom
     canvas.addEventListener('wheel', wheelZoomHandler, { passive: false });
     canvas.addEventListener('dblclick', resetView);
+
+    // Mobile/Pointer gestures
+    canvas.addEventListener('pointerdown', onPointerDown, { passive: false });
+    canvas.addEventListener('pointermove', onPointerMove, { passive: false });
+    canvas.addEventListener('pointerup', onPointerUp, { passive: false });
+    canvas.addEventListener('pointercancel', onPointerUp, { passive: false });
+    canvas.addEventListener('lostpointercapture', onPointerUp, { passive: false });
   })();
 </script>
 </body>
