@@ -106,6 +106,10 @@
     const MINOR_MM = 50;      // minor step
     const FIT = 'height';     // fill stage height
 
+    // Target line thickness in mm (tweak to taste)
+    const MINOR_MM_THICK = 0.20;
+    const MAJOR_MM_THICK = 0.35;
+
     // Your SVG
     const SVG_URL = 'https://raw.githubusercontent.com/r0wanb3zy/sellwood/5df789a1d288cb26fa1f617eed1e8475cd48e9d6/images/grid/D36.svg';
 
@@ -185,13 +189,20 @@
       return { width, height, scale, gridW, gridH, gridLeft, gridTop };
     }
 
-    // Always draw 1 physical pixel-wide lines
-    function lineWidths() {
-      const oneDevicePxInCss = 1 / dpr;
-      return { minor: oneDevicePxInCss, major: oneDevicePxInCss };
+    // Line widths in CSS px derived from mm target (consistent across devices)
+    function lineWidths(scale) {
+      // scale = CSS px per mm
+      const minorCss = MINOR_MM_THICK * scale;
+      const majorCss = MAJOR_MM_THICK * scale;
+
+      // If you prefer crisp hairlines on very small scales, uncomment this clamp:
+      // const oneDevicePxCss = 1 / dpr;
+      // return { minor: Math.max(minorCss, oneDevicePxCss), major: Math.max(majorCss, oneDevicePxCss) };
+
+      return { minor: minorCss, major: majorCss };
     }
 
-    // Snap the stroke center onto the device pixel grid
+    // Snap the stroke center onto the device pixel grid when possible
     function crispCoord(v, lineWidthCss) {
       const lwDev = lineWidthCss * dpr;
       const isInt = Math.abs(lwDev - Math.round(lwDev)) < 1e-6;
@@ -202,7 +213,7 @@
 
     function draw() {
       const { width, height, scale, gridW, gridH, gridLeft, gridTop } = computeLayout();
-      const { minor, major } = lineWidths();
+      const { minor, major } = lineWidths(scale);
 
       // Clear
       ctx.clearRect(0, 0, width, height);
@@ -215,62 +226,62 @@
     }
 
     function drawGrid({ scale, gridW, gridH, gridLeft, gridTop, minorLW, majorLW }) {
-  const minorColor = getComputedStyle(document.documentElement).getPropertyValue('--minor').trim() || '#d9d9d9';
-  const majorColor = getComputedStyle(document.documentElement).getPropertyValue('--major').trim() || '#7a7a7a';
+      const minorColor = getComputedStyle(document.documentElement).getPropertyValue('--minor').trim() || '#d9d9d9';
+      const majorColor = getComputedStyle(document.documentElement).getPropertyValue('--major').trim() || '#7a7a7a';
 
-  const yMin = -EXTRA_TOP_MM;
-  const yMax = MM_H;
+      const yMin = -EXTRA_TOP_MM;
+      const yMax = MM_H;
 
-  ctx.save();
-  // Extend clipping region by 1 CSS pixel to ensure right border is fully visible
-  const clipPadding = 1 / dpr; // 1 device pixel in CSS pixels
-  ctx.beginPath();
-  ctx.rect(gridLeft, gridTop, gridW + clipPadding, gridH);
-  ctx.clip();
+      ctx.save();
+      // Extend clipping region by 1 CSS pixel to ensure right border is fully visible
+      const clipPadding = 1 / dpr; // 1 device pixel in CSS pixels
+      ctx.beginPath();
+      ctx.rect(gridLeft, gridTop, gridW + clipPadding, gridH);
+      ctx.clip();
 
-  // Minor lines (every 50 mm)
-  ctx.strokeStyle = minorColor;
-  ctx.lineWidth = minorLW;
+      // Minor lines (every 50 mm)
+      ctx.strokeStyle = minorColor;
+      ctx.lineWidth = minorLW;
 
-  // Vertical (X) minor lines
-  for (let xm = MINOR_MM; xm < MM_W; xm += MINOR_MM) {
-    if (xm % MAJOR_MM === 0) continue;
-    const x = crispCoord(gridLeft + xm * scale, ctx.lineWidth);
-    ctx.beginPath();
-    ctx.moveTo(x, gridTop);
-    ctx.lineTo(x, gridTop + gridH);
-    ctx.stroke();
-  }
-  // Horizontal (Y) minor lines include negatives
-  for (let ym = Math.ceil(yMin / MINOR_MM) * MINOR_MM; ym < yMax; ym += MINOR_MM) {
-    if (ym % MAJOR_MM === 0) continue;
-    const y = crispCoord(gridTop + (ym + EXTRA_TOP_MM) * scale, ctx.lineWidth);
-    ctx.beginPath();
-    ctx.moveTo(gridLeft, y);
-    ctx.lineTo(gridLeft + gridW, y);
-    ctx.stroke();
-  }
+      // Vertical (X) minor lines
+      for (let xm = MINOR_MM; xm < MM_W; xm += MINOR_MM) {
+        if (xm % MAJOR_MM === 0) continue;
+        const x = crispCoord(gridLeft + xm * scale, ctx.lineWidth);
+        ctx.beginPath();
+        ctx.moveTo(x, gridTop);
+        ctx.lineTo(x, gridTop + gridH);
+        ctx.stroke();
+      }
+      // Horizontal (Y) minor lines include negatives
+      for (let ym = Math.ceil(yMin / MINOR_MM) * MINOR_MM; ym < yMax; ym += MINOR_MM) {
+        if (ym % MAJOR_MM === 0) continue;
+        const y = crispCoord(gridTop + (ym + EXTRA_TOP_MM) * scale, ctx.lineWidth);
+        ctx.beginPath();
+        ctx.moveTo(gridLeft, y);
+        ctx.lineTo(gridLeft + gridW, y);
+        ctx.stroke();
+      }
 
-  // Major lines (every 100 mm)
-  ctx.strokeStyle = majorColor;
-  ctx.lineWidth = majorLW;
+      // Major lines (every 100 mm)
+      ctx.strokeStyle = majorColor;
+      ctx.lineWidth = majorLW;
 
-  for (let xm = 0; xm <= MM_W; xm += MAJOR_MM) {
-    const x = crispCoord(gridLeft + xm * scale, ctx.lineWidth);
-    ctx.beginPath();
-    ctx.moveTo(x, gridTop);
-    ctx.lineTo(x, gridTop + gridH);
-    ctx.stroke();
-  }
-  for (let ym = Math.ceil(yMin / MAJOR_MM) * MAJOR_MM; ym <= yMax; ym += MAJOR_MM) {
-    const y = crispCoord(gridTop + (ym + EXTRA_TOP_MM) * scale, ctx.lineWidth);
-    ctx.beginPath();
-    ctx.moveTo(gridLeft, y);
-    ctx.lineTo(gridLeft + gridW, y);
-    ctx.stroke();
-  }
-  ctx.restore();
-}
+      for (let xm = 0; xm <= MM_W; xm += MAJOR_MM) {
+        const x = crispCoord(gridLeft + xm * scale, ctx.lineWidth);
+        ctx.beginPath();
+        ctx.moveTo(x, gridTop);
+        ctx.lineTo(x, gridTop + gridH);
+        ctx.stroke();
+      }
+      for (let ym = Math.ceil(yMin / MAJOR_MM) * MAJOR_MM; ym <= yMax; ym += MAJOR_MM) {
+        const y = crispCoord(gridTop + (ym + EXTRA_TOP_MM) * scale, ctx.lineWidth);
+        ctx.beginPath();
+        ctx.moveTo(gridLeft, y);
+        ctx.lineTo(gridLeft + gridW, y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
 
     function drawDot({ scale, gridLeft, gridTop }) {
       const xmm = parseFloat(xInput.value);
