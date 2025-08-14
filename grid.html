@@ -20,7 +20,7 @@
 
     /* Prevent pull-to-refresh / overscroll bounce where supported (Chrome Android, modern Safari) */
     html, body, .stage {
-      overscroll-behavior-y: none; /* blocks swipe-down refresh */
+      overscroll-behavior-y: none;
       overscroll-behavior-x: none;
     }
 
@@ -30,7 +30,6 @@
       background: #fff;
     }
 
-    /* App layout: controls on top, grid fills remaining height */
     .app {
       display: flex;
       flex-direction: column;
@@ -38,10 +37,9 @@
       width: 100%;
     }
     @supports (height: 100dvh) {
-      .app { height: 100dvh; } /* more accurate on mobile browsers */
+      .app { height: 100dvh; }
     }
 
-    /* Top-centered controls */
     .controls {
       width: 100%;
       display: flex;
@@ -76,13 +74,10 @@
       color: #111;
     }
 
-    /* Gray placeholder */
     input::placeholder { color: #9aa3ad; opacity: 1; }
-
     input::-webkit-outer-spin-button,
     input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
-    /* Buttons */
     button {
       padding: 8px 12px;
       border: 1px solid var(--ui-border);
@@ -114,7 +109,6 @@
 <body>
   <div class="app">
     <div class="controls" aria-label="Plot point controls">
-      <!-- Model select with a placeholder (no model selected by default) -->
       <div class="row">
         <select id="modelSelect" aria-label="Choose model">
           <option value="" selected disabled>Model</option>
@@ -130,8 +124,8 @@
         <input id="ymm" type="number" step="1" inputmode="decimal" placeholder="Y" aria-label="Y coordinate (mm)" />
       </div>
 
-      <!-- Clear button on the right -->
-      <button id="clearBtn" type="button" title="Reset X,Y to default (0,0)">Clear</button>
+      <!-- Reset button on the right -->
+      <button id="clearBtn" type="button" title="Reset to default (no model, empty inputs)">Reset</button>
     </div>
 
     <main class="stage">
@@ -141,17 +135,15 @@
 
 <script>
   (function () {
-    const MM_W = 2100;        // grid width in mm
-    const MM_H = 3700;        // grid height in mm
-    const MAJOR_MM = 100;     // major step
-    const MINOR_MM = 50;      // minor step
-    const FIT = 'height';     // fill stage height
+    const MM_W = 2100;
+    const MM_H = 3700;
+    const MAJOR_MM = 100;
+    const MINOR_MM = 50;
+    const FIT = 'height';
 
-    // Target line thickness in mm (tweak to taste)
     const MINOR_MM_THICK = 0.25;
     const MAJOR_MM_THICK = 0.5;
 
-    // Models config (add more here later)
     const MODELS = {
       P36: {
         label: 'P36',
@@ -175,23 +167,23 @@
     const stage = document.querySelector('.stage');
 
     const STORAGE_KEY_XY = 'grid-plotter-xy';
+    const STORAGE_KEY_MODEL = 'grid-plotter-model';
+
     const DEFAULT_X = 0;
     const DEFAULT_Y = 0;
-
-    // Default to "no model" (no overlay)
     const DEFAULT_MODEL = '';
+
     let selectedModel = DEFAULT_MODEL;
 
     // Effective DPR includes pinch-zoom scale
     let dpr = 1;
-
     function getEffectiveDpr() {
       const base = Math.max(1, window.devicePixelRatio || 1);
       const zoom = (window.visualViewport && window.visualViewport.scale) ? window.visualViewport.scale : 1;
       return Math.min(6, base * zoom);
     }
 
-    let svgInfo = null; // holds loaded SVG + size in mm
+    let svgInfo = null;
 
     function getModelConfig(key = selectedModel) {
       if (!key || !MODELS[key]) return { label: 'None', extraTop: 0, svg: null };
@@ -199,14 +191,13 @@
     }
 
     // View transform for desktop zoom/pan
-    const view = { scale: 1, x: 0, y: 0 }; // scale factor and pan (CSS px)
-    const VIEW_MIN = 1;   // don't allow zooming out past the default fit
+    const view = { scale: 1, x: 0, y: 0 };
+    const VIEW_MIN = 1;
     const VIEW_MAX = 16;
 
     function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
     function resetView() { view.scale = VIEW_MIN; view.x = 0; view.y = 0; draw(); }
 
-    // Throttle expensive resizes to animation frames
     let rafId = 0;
     function scheduleResize() {
       if (rafId) return;
@@ -226,11 +217,9 @@
       if (canvas.width !== w) canvas.width = w;
       if (canvas.height !== h) canvas.height = h;
 
-      // 1 CSS px in the drawing API == 1 CSS px on the page
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.imageSmoothingEnabled = false; // keeps raster overlays sharper
+      ctx.imageSmoothingEnabled = false;
 
-      // If we’re at default zoom, keep the default offsets after resize
       if (view.scale <= VIEW_MIN + 1e-6) {
         view.scale = VIEW_MIN;
         view.x = 0;
@@ -242,8 +231,8 @@
 
     function computeLayout() {
       const { extraTop } = getModelConfig();
-      const width = canvas.width / dpr;   // CSS px
-      const height = canvas.height / dpr; // CSS px
+      const width = canvas.width / dpr;
+      const height = canvas.height / dpr;
 
       const MM_TOTAL_H = MM_H + extraTop;
 
@@ -271,30 +260,29 @@
       return { width, height, scale, gridW, gridH, gridLeft, gridTop, extraTop };
     }
 
-    // Line widths in CSS px derived from mm target (consistent across devices)
     function lineWidths(scale) {
-      // scale = CSS px per mm
       const minorCss = MINOR_MM_THICK * scale;
       const majorCss = MAJOR_MM_THICK * scale;
       return { minor: minorCss, major: majorCss };
     }
 
-    // Snap the stroke center onto the device pixel grid when possible
     function crispCoord(v, lineWidthCss) {
       const lwDev = lineWidthCss * dpr;
       const isInt = Math.abs(lwDev - Math.round(lwDev)) < 1e-6;
       const isOddDevicePx = isInt && (Math.round(lwDev) % 2 === 1);
-      const centerOffsetDev = isOddDevicePx ? 0.5 : 0; // 1px stroke centers at N+0.5 device px
+      const centerOffsetDev = isOddDevicePx ? 0.5 : 0;
       return (Math.round(v * dpr) + centerOffsetDev) / dpr;
+    }
+
+    function alignToDevicePixel(v) {
+      return Math.round(v * dpr) / dpr;
     }
 
     function draw() {
       const { width, height, scale: baseScale, gridLeft: baseLeft, gridTop: baseTop, extraTop } = computeLayout();
 
-      // Effective mm->CSS px scale with view zoom
       const mm2px = baseScale * view.scale;
 
-      // Clear
       ctx.clearRect(0, 0, width, height);
       ctx.fillStyle = '#fff';
       ctx.fillRect(0, 0, width, height);
@@ -304,12 +292,11 @@
 
       const { minor, major } = lineWidths(mm2px);
 
-      // Grid size in CSS px with zoom included
       const gridW = MM_W * mm2px;
       const gridH = (MM_H + extraTop) * mm2px;
 
       drawGrid({ scale: mm2px, gridW, gridH, gridLeft, gridTop, minorLW: minor, majorLW: major, extraTop });
-      drawSvgOverlay({ scale: mm2px, gridLeft, gridTop, extraTop }); // overlay (if any)
+      drawSvgOverlay({ scale: mm2px, gridLeft, gridTop, extraTop });
       drawDot({ scale: mm2px, gridLeft, gridTop, extraTop });
     }
 
@@ -321,17 +308,15 @@
       const yMax = MM_H;
 
       ctx.save();
-      // Extend clipping region by 1 CSS pixel to ensure right border is fully visible
-      const clipPadding = 1 / dpr; // 1 device pixel in CSS pixels
+      const clipPadding = 1 / dpr;
       ctx.beginPath();
       ctx.rect(gridLeft, gridTop, gridW + clipPadding, gridH);
       ctx.clip();
 
-      // Minor lines (every 50 mm)
+      // Minor lines
       ctx.strokeStyle = minorColor;
       ctx.lineWidth = minorLW;
 
-      // Vertical (X) minor lines
       for (let xm = MINOR_MM; xm < MM_W; xm += MINOR_MM) {
         if (xm % MAJOR_MM === 0) continue;
         const x = crispCoord(gridLeft + xm * scale, ctx.lineWidth);
@@ -340,7 +325,6 @@
         ctx.lineTo(x, gridTop + gridH);
         ctx.stroke();
       }
-      // Horizontal (Y) minor lines include negatives
       for (let ym = Math.ceil(yMin / MINOR_MM) * MINOR_MM; ym < yMax; ym += MINOR_MM) {
         if (ym % MAJOR_MM === 0) continue;
         const y = crispCoord(gridTop + (ym + extraTop) * scale, ctx.lineWidth);
@@ -350,7 +334,7 @@
         ctx.stroke();
       }
 
-      // Major lines (every 100 mm)
+      // Major lines
       ctx.strokeStyle = majorColor;
       ctx.lineWidth = majorLW;
 
@@ -372,37 +356,39 @@
     }
 
     function drawDot({ scale, gridLeft, gridTop, extraTop }) {
-      // Use 0,0 when inputs are empty or invalid
       const xParsed = parseFloat(xInput.value);
       const yParsed = parseFloat(yInput.value);
       const xmm = Number.isFinite(xParsed) ? xParsed : DEFAULT_X;
       const ymm = Number.isFinite(yParsed) ? yParsed : DEFAULT_Y;
 
       const x = gridLeft + xmm * scale;
-      const y = gridTop + (extraTop + ymm) * scale; // shift by the extra top mm
+      const y = gridTop + (extraTop + ymm) * scale;
+
       const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#e53935';
 
-      const r = 3; // CSS px radius; scales with DPR for smooth circles
+      // Dot: constant CSS pixel size, center aligned to device pixel grid for crispness
+      const rCss = 4; // radius in CSS px (consistent visual size)
+      const cx = alignToDevicePixel(x);
+      const cy = alignToDevicePixel(y);
+
       ctx.save();
       ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.arc(cx, cy, rCss, 0, Math.PI * 2);
       ctx.fillStyle = accent;
       ctx.fill();
       ctx.restore();
     }
 
-    // Draw the SVG on top of the grid at 1:1 mm scale (with view zoom)
     function drawSvgOverlay({ scale, gridLeft, gridTop, extraTop }) {
       if (!svgInfo || !svgInfo.img || !svgInfo.mmSize.width || !svgInfo.mmSize.height) return;
 
-      const destW = svgInfo.mmSize.width * scale;   // px
-      const destH = svgInfo.mmSize.height * scale;  // px
-      const dx = gridLeft;                          // align left to grid
-      const dy = gridTop;                           // align top to extended grid
+      const destW = svgInfo.mmSize.width * scale;
+      const destH = svgInfo.mmSize.height * scale;
+      const dx = gridLeft;
+      const dy = gridTop;
 
       ctx.save();
-      // Clip to grid bounds, expanded by half a device pixel to avoid trimming
-      const half = 0.5 / dpr; // CSS px
+      const half = 0.5 / dpr;
       ctx.beginPath();
       ctx.rect(gridLeft - half, gridTop - half, MM_W * scale + 2 * half, (MM_H + extraTop) * scale + 2 * half);
       ctx.clip();
@@ -411,7 +397,6 @@
       ctx.restore();
     }
 
-    // Helpers: load/measure the SVG in mm
     function parseLengthToMm(val) {
       if (!val) return null;
       const m = String(val).trim().match(/^(-?\d+(\.\d+)?)([a-z%]*)$/i);
@@ -419,15 +404,9 @@
       const num = parseFloat(m[1]);
       const unit = (m[3] || '').toLowerCase();
       const mmPerUnit = {
-        mm: 1,
-        cm: 10,
-        in: 25.4,
-        pt: 25.4 / 72,
-        pc: 25.4 / 6,
-        px: 25.4 / 96,
-        q: 0.25
+        mm: 1, cm: 10, in: 25.4, pt: 25.4 / 72, pc: 25.4 / 6, px: 25.4 / 96, q: 0.25
       };
-      const k = unit ? mmPerUnit[unit] : 1; // no unit => assume mm
+      const k = unit ? mmPerUnit[unit] : 1;
       if (!k) return null;
       return num * k;
     }
@@ -476,12 +455,12 @@
       return { img, ...meta };
     }
 
-    // Persistence for XY inputs only
+    // Persistence
     function saveXY() {
       try {
         const data = { x: xInput.value, y: yInput.value };
         localStorage.setItem(STORAGE_KEY_XY, JSON.stringify(data));
-      } catch (e) { /* ignore private mode errors */ }
+      } catch (e) {}
     }
     function restoreXY() {
       try {
@@ -490,14 +469,32 @@
         const { x, y } = JSON.parse(raw);
         if (x !== undefined && x !== null) xInput.value = x;
         if (y !== undefined && y !== null) yInput.value = y;
-      } catch (e) { /* ignore */ }
+      } catch (e) {}
+    }
+
+    function saveModel() {
+      try {
+        localStorage.setItem(STORAGE_KEY_MODEL, selectedModel || '');
+      } catch (e) {}
+    }
+    function restoreModel() {
+      try {
+        const m = localStorage.getItem(STORAGE_KEY_MODEL) || '';
+        if (m && MODELS[m]) {
+          modelSelect.value = m;
+          setModel(m);
+        } else {
+          modelSelect.value = '';
+          setModel('');
+        }
+      } catch (e) {
+        setModel('');
+      }
     }
 
     function setModel(key) {
-      // If key is invalid, clear to "no model"
       selectedModel = (key && MODELS[key]) ? key : DEFAULT_MODEL;
 
-      // Clear old overlay
       svgInfo = null;
 
       const { svg } = getModelConfig();
@@ -507,18 +504,13 @@
           .catch(err => console.error('SVG load/parse failed:', err));
       }
 
-      // Redraw immediately (shows grid + dot; overlay appears once loaded)
       draw();
     }
 
-    // Select all text when focusing inputs
     function enableSelectAllOnFocus(el) {
       el.addEventListener('focus', () => {
         setTimeout(() => {
-          try {
-            el.select();
-            el.setSelectionRange?.(0, 9999);
-          } catch (e) {}
+          try { el.select(); el.setSelectionRange?.(0, 9999); } catch (e) {}
         }, 0);
       });
 
@@ -528,9 +520,8 @@
       }
     }
 
-    // Desktop wheel-to-zoom centered at cursor, snapping to default when at min zoom
+    // Wheel zoom: in to mouse, out toward default (no snap)
     function wheelZoomHandler(e) {
-      // Only act when the wheel is over the canvas
       e.preventDefault();
 
       const rect = canvas.getBoundingClientRect();
@@ -539,47 +530,53 @@
 
       const { scale: baseScale, gridLeft: baseLeft, gridTop: baseTop } = computeLayout();
 
-      // Normalize delta to "pixels"
       const deltaPx = (e.deltaMode === 1) ? (e.deltaY * 16)
                     : (e.deltaMode === 2) ? (e.deltaY * rect.height)
                     : e.deltaY;
 
-      // Zoom factor: ~300px of wheel = 2x change
       const factor = Math.exp(-deltaPx / 300);
 
       const prevVS = view.scale;
-      const nextVS = clamp(prevVS * factor, VIEW_MIN, VIEW_MAX);
-
-      // If no effective change, bail
+      let nextVS = clamp(prevVS * factor, VIEW_MIN, VIEW_MAX);
       if (Math.abs(nextVS - prevVS) < 1e-6) return;
 
-      // If we’re clamping to the default zoom, snap pan to default too
-      if (nextVS <= VIEW_MIN + 1e-6) {
-        view.scale = VIEW_MIN;
-        view.x = 0;
-        view.y = 0;
-        draw();
-        return;
+      const ratio = nextVS / prevVS;
+
+      // Choose zoom anchor
+      let anchorX, anchorY;
+
+      if (nextVS > prevVS) {
+        // Zoom in: anchor at cursor
+        anchorX = px;
+        anchorY = py;
+      } else {
+        // Zoom out: anchor toward default so that when we hit min, pan -> 0 with no snap
+        const S = baseScale * prevVS;
+        const Smin = baseScale * VIEW_MIN;
+        if (S - Smin < 1e-6) {
+          anchorX = baseLeft;
+          anchorY = baseTop;
+        } else {
+          const axOff = -view.x * Smin / (S - Smin);
+          const ayOff = -view.y * Smin / (S - Smin);
+          anchorX = baseLeft + axOff;
+          anchorY = baseTop + ayOff;
+        }
       }
 
-      // Otherwise, zoom around cursor keeping the world point stable
-      const curScale = baseScale * prevVS;
-      const gx = (px - (baseLeft + view.x)) / curScale; // mm
-      const gy = (py - (baseTop + view.y)) / curScale;  // mm (includes extraTop shift later)
-
+      // Apply zoom around anchor
+      view.x = view.x * ratio + (anchorX - baseLeft) * (1 - ratio);
+      view.y = view.y * ratio + (anchorY - baseTop) * (1 - ratio);
       view.scale = nextVS;
-      const newScale = baseScale * view.scale;
-      view.x = px - baseLeft - gx * newScale;
-      view.y = py - baseTop - gy * newScale;
 
       draw();
     }
 
-    // Init: start with no model selected
+    // Init
     restoreXY();
-    resizeCanvas(); // draws grid only (no overlay by default)
+    resizeCanvas();
+    restoreModel(); // may trigger draw again after SVG load
 
-    // Keep canvas sized to viewport and layout changes
     window.addEventListener('resize', scheduleResize);
     window.addEventListener('orientationchange', scheduleResize);
 
@@ -588,39 +585,41 @@
       ro.observe(stage);
     }
 
-    // Redraw when pinch-zooming or panning the visual viewport
     if (window.visualViewport) {
       visualViewport.addEventListener('resize', scheduleResize, { passive: true });
       visualViewport.addEventListener('scroll', scheduleResize, { passive: true });
     }
 
-    // Dynamic inputs + persistence
     xInput.addEventListener('input', () => { saveXY(); draw(); });
     yInput.addEventListener('input', () => { saveXY(); draw(); });
     [xInput, yInput].forEach(el =>
       el.addEventListener('keydown', e => { if (e.key === 'Enter') { saveXY(); draw(); } })
     );
 
-    // Model change => load overlay
     modelSelect.addEventListener('change', (e) => {
       setModel(e.target.value);
+      saveModel();
     });
 
-    // Select-all behavior
     [xInput, yInput].forEach(enableSelectAllOnFocus);
 
-    // Clear button: reset to defaults (keeps model selection untouched)
+    // Reset button: no model + clear inputs + reset view + clear persistence
     clearBtn.addEventListener('click', () => {
+      // Inputs
       xInput.value = '';
       yInput.value = '';
       try { localStorage.removeItem(STORAGE_KEY_XY); } catch (e) {}
-      draw(); // with blanks, dot is at 0,0 (default)
+
+      // Model
+      modelSelect.value = '';
+      setModel('');
+      try { localStorage.removeItem(STORAGE_KEY_MODEL); } catch (e) {}
+
+      // View
+      resetView();
     });
 
-    // Wheel-to-zoom on desktop (or any device with a wheel)
     canvas.addEventListener('wheel', wheelZoomHandler, { passive: false });
-
-    // Double-click to reset view
     canvas.addEventListener('dblclick', resetView);
   })();
 </script>
