@@ -14,6 +14,10 @@
       --minor: rgba(0, 0, 0, 0.5);
       --major: rgba(0, 0, 0, 1);
       --accent: #e53935;
+
+      /* label styling */
+      --label-color: #111;
+      --label-halo: rgba(255, 255, 255, 0.92);
     }
     * { box-sizing: border-box; }
     html, body { height: 100%; margin: 0; }
@@ -101,11 +105,6 @@
       select > option { text-align: center; } /* optional; centers items in the open list */
     }
 
-    /* Optional: if text still looks optically right-shifted in some WebKit builds, nudge left a hair */
-    /* @supports (-webkit-appearance: none) {
-      select { text-indent: -1px; }
-    } */
-
     input::placeholder { color: #9aa3ad; opacity: 1; }
     input::-webkit-outer-spin-button,
     input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
@@ -161,7 +160,7 @@
     </div>
 
     <main class="stage">
-      <canvas id="grid" aria-label="Millimeter grid canvas without labels"></canvas>
+      <canvas id="grid" aria-label="Millimeter grid canvas with numeric axis labels"></canvas>
     </main>
   </div>
 
@@ -175,6 +174,10 @@
 
     const MINOR_MM_THICK = 0.25;
     const MAJOR_MM_THICK = 0.5;
+
+    // Labeling config
+    const LABEL_MIN_SPACING_PX = 48; // try to keep ~48px between labels
+    const LABEL_FONT_PX = 12;        // comfortable, crisp on phones/tablets/desktop
 
     const MODELS = {
       P36: {
@@ -329,6 +332,10 @@
 
       drawGrid({ scale: mm2px, gridW, gridH, gridLeft, gridTop, minorLW: minor, majorLW: major, extraTop });
       drawSvgOverlay({ scale: mm2px, gridLeft, gridTop, extraTop });
+
+      // Axis labels: X pinned to bottom, Y outside the grid's left edge (auto-shift to stay visible)
+      drawAxisLabelsPinned({ scale: mm2px, gridLeft, gridTop, extraTop, width, height });
+
       drawDot({ scale: mm2px, gridLeft, gridTop, extraTop });
     }
 
@@ -387,6 +394,102 @@
       ctx.restore();
     }
 
+    // Axis labels: X pinned to bottom, Y just outside the grid's left edge.
+    // For Y, auto-shift right to keep the entire label visible within the canvas.
+    function drawAxisLabelsPinned({ scale, gridLeft, gridTop, extraTop, width, height }) {
+      const labelColor = getComputedStyle(document.documentElement).getPropertyValue('--label-color').trim() || '#111';
+      const labelHalo  = getComputedStyle(document.documentElement).getPropertyValue('--label-halo').trim()  || 'rgba(255,255,255,0.92)';
+
+      // Choose label step to maintain a minimum pixel spacing
+      const stepFactor = Math.max(1, Math.ceil(LABEL_MIN_SPACING_PX / (MAJOR_MM * scale)));
+      const step = MAJOR_MM * stepFactor;
+
+      const fontPx = LABEL_FONT_PX;
+      const haloWidth = 3; // CSS px halo for contrast
+
+      // Edges/margins
+      const margin = 6;      // distance from canvas edges
+      const outsideGap = 6;  // gap between grid and Y labels when the grid's left edge is visible
+
+      // Visible world ranges (clamped to grid domain)
+      const xMinMmVisible = Math.max(0, (0 - gridLeft) / scale);
+      const xMaxMmVisible = Math.min(MM_W, (width - gridLeft) / scale);
+
+      const yMinMmVisible = Math.max(0, (0 - gridTop) / scale - extraTop);
+      const yMaxMmVisible = Math.min(MM_H, (height - gridTop) / scale - extraTop);
+
+      // Bottom X labels (pinned to bottom of canvas)
+      if (xMaxMmVisible >= 0 && xMinMmVisible <= MM_W) {
+        ctx.save();
+        ctx.font = `600 ${fontPx}px system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Helvetica, Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.lineJoin = 'round';
+        ctx.miterLimit = 2;
+
+        const yBottom = height - margin;
+
+        const startX = Math.ceil(xMinMmVisible / step) * step;
+        for (let xm = startX; xm <= xMaxMmVisible; xm += step) {
+          const sx = alignToDevicePixel(gridLeft + xm * scale);
+          const text = String(xm);
+          ctx.lineWidth = haloWidth;
+          ctx.strokeStyle = labelHalo;
+          ctx.strokeText(text, sx, yBottom);
+          ctx.fillStyle = labelColor;
+          ctx.fillText(text, sx, yBottom);
+        }
+        ctx.restore();
+      }
+
+      // Left Y labels (outside the grid's left edge; auto-shift to keep fully visible)
+      if (yMaxMmVisible >= 0 && yMinMmVisible <= MM_H) {
+        ctx.save();
+        ctx.font = `600 ${fontPx}px system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Helvetica, Arial`;
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.lineJoin = 'round';
+        ctx.miterLimit = 2;
+
+        // Prepare list of visible labels to measure max width
+        const labels = [];
+        const startY = Math.ceil(yMinMmVisible / step) * step;
+        for (let ym = startY; ym <= yMaxMmVisible; ym += step) {
+          labels.push(String(ym));
+        }
+
+        // Measure widest visible label to avoid left-edge clipping
+        let maxW = 0;
+        for (const txt of labels) {
+          const w = ctx.measureText(txt).width;
+          if (w > maxW) maxW = w;
+        }
+        const haloPad = Math.ceil(haloWidth / 2) + 1; // keep halo off the edge
+
+        // Desired position: just outside the grid's left edge
+        const desiredRightX = gridLeft - outsideGap;
+
+        // Minimum right-edge X so the whole text stays within the canvas
+        // (since textAlign='right', text occupies [x - width, x])
+        const minRightX = margin + maxW + haloPad;
+
+        const xRight = alignToDevicePixel(Math.max(desiredRightX, minRightX));
+
+        // Draw labels
+        for (let i = 0; i < labels.length; i++) {
+          const ym = startY + i * step;
+          const sy = alignToDevicePixel(gridTop + (extraTop + ym) * scale);
+          const text = labels[i];
+          ctx.lineWidth = haloWidth;
+          ctx.strokeStyle = labelHalo;
+          ctx.strokeText(text, xRight, sy);
+          ctx.fillStyle = labelColor;
+          ctx.fillText(text, xRight, sy);
+        }
+        ctx.restore();
+      }
+    }
+
     function drawDot({ scale, gridLeft, gridTop, extraTop }) {
       const xParsed = parseFloat(xInput.value);
       const yParsed = parseFloat(yInput.value);
@@ -401,7 +504,7 @@
       // Keep dot a constant on-screen size (compensate for page pinch-zoom)
       const pageZoom = (window.visualViewport && window.visualViewport.scale) ? window.visualViewport.scale : 1;
       const rCssBase = 4;           // base radius in CSS px at pageZoom = 1
-      const rCss = rCssBase / pageZoom; // CHANGED: normalize by visual viewport zoom
+      const rCss = rCssBase / pageZoom; // normalize by visual viewport zoom
 
       const cx = alignToDevicePixel(x);
       const cy = alignToDevicePixel(y);
@@ -638,13 +741,13 @@
 
     [xInput, yInput].forEach(enableSelectAllOnFocus);
 
-// Reset button: clear inputs to show placeholders, keep current model and view
-clearBtn.addEventListener('click', () => {
-  xInput.value = '';
-  yInput.value = '';
-  saveXY();
-  draw();
-});
+    // Reset button: clear inputs to show placeholders, keep current model and view
+    clearBtn.addEventListener('click', () => {
+      xInput.value = '';
+      yInput.value = '';
+      saveXY();
+      draw();
+    });
 
     canvas.addEventListener('wheel', wheelZoomHandler, { passive: false });
     canvas.addEventListener('dblclick', resetView);
