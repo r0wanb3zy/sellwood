@@ -232,6 +232,19 @@
     const VIEW_MIN = 1;
     const VIEW_MAX = 16;
 
+    // Added: helpers to gate panning and snap to default at min zoom
+    const EPS = 1e-6;
+    const canPan = () => view.scale > VIEW_MIN + EPS;
+    function clampViewAtMin() {
+      if (view.scale <= VIEW_MIN + EPS) {
+        view.scale = VIEW_MIN;
+        view.x = 0;
+        view.y = 0;
+        return true;
+      }
+      return false;
+    }
+
     function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
     function resetView() { view.scale = VIEW_MIN; view.x = 0; view.y = 0; draw(); }
 
@@ -257,11 +270,8 @@
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.imageSmoothingEnabled = false;
 
-      if (view.scale <= VIEW_MIN + 1e-6) {
-        view.scale = VIEW_MIN;
-        view.x = 0;
-        view.y = 0;
-      }
+      // Ensure default position when at minimum zoom
+      clampViewAtMin();
 
       draw();
     }
@@ -708,6 +718,9 @@
       view.y = view.y * ratio + (anchorY - baseTop) * (1 - ratio);
       view.scale = nextVS;
 
+      // Snap to exact default when reaching minimum zoom
+      clampViewAtMin();
+
       draw();
     }
 
@@ -746,6 +759,7 @@
       pinch.startDist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
     }
 
+    // Updated: snap back to default when zoomed to min, and only allow pan when zoomed-in
     function handlePinch() {
       const pts = [...pointers.values()];
       if (pts.length < 2) return;
@@ -761,6 +775,16 @@
 
       const rawScale = pinch.startScale * (dist / pinch.startDist);
       const newScale = clamp(rawScale, VIEW_MIN, VIEW_MAX);
+
+      // Lock to default when at or under min zoom
+      if (newScale <= VIEW_MIN + EPS) {
+        view.scale = VIEW_MIN;
+        view.x = 0;
+        view.y = 0;
+        draw();
+        return;
+      }
+
       const ratio = newScale / pinch.startScale;
 
       // Keep the world point under the initial pinch center "locked" under the current center
@@ -778,9 +802,13 @@
 
       if (pointers.size === 1) {
         const p = [...pointers.values()][0];
-        pan.active = true;
-        pan.lastX = p.x;
-        pan.lastY = p.y;
+        if (canPan()) {
+          pan.active = true;
+          pan.lastX = p.x;
+          pan.lastY = p.y;
+        } else {
+          pan.active = false; // locked at min zoom
+        }
         pinch.active = false;
       } else if (pointers.size === 2) {
         pan.active = false;
@@ -814,10 +842,12 @@
       if (pointers.size === 0) {
         pan.active = false;
         pinch.active = false;
+        // If we ended at min, snap back to default position
+        if (clampViewAtMin()) draw();
       } else if (pointers.size === 1) {
-        // Continue panning with remaining finger
+        // Continue panning with remaining finger only if zoomed-in
         const p = [...pointers.values()][0];
-        pan.active = true;
+        pan.active = canPan();
         pan.lastX = p.x;
         pan.lastY = p.y;
         pinch.active = false;
