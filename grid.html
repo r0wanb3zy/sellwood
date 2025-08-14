@@ -759,41 +759,41 @@
       pinch.startDist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
     }
 
-function handlePinch() {
-  const pts = [...pointers.values()];
-  if (pts.length < 2) return;
-  const { gridLeft: baseLeft, gridTop: baseTop } = computeLayout();
+    // Updated: snap back to default when zoomed to min, and only allow pan when zoomed-in
+    function handlePinch() {
+      const pts = [...pointers.values()];
+      if (pts.length < 2) return;
+      const { scale: baseScale, gridLeft: baseLeft, gridTop: baseTop } = computeLayout();
 
-  const p1 = pts[0], p2 = pts[1];
-  const centerX = (p1.x + p2.x) / 2;
-  const centerY = (p1.y + p2.y) / 2;
-  const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+      const p1 = pts[0], p2 = pts[1];
+      const centerX = (p1.x + p2.x) / 2;
+      const centerY = (p1.y + p2.y) / 2;
+      const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
 
-  if (!pinch.active) startPinchBaseline();
-  if (pinch.startDist <= 0) return;
+      if (!pinch.active) startPinchBaseline();
+      if (pinch.startDist <= 0) return;
 
-  const rawScale = pinch.startScale * (dist / pinch.startDist);
-  const newScale = clamp(rawScale, VIEW_MIN, VIEW_MAX);
-  const r = newScale / pinch.startScale;
+      const rawScale = pinch.startScale * (dist / pinch.startDist);
+      const newScale = clamp(rawScale, VIEW_MIN, VIEW_MAX);
 
-  // Pan that would keep the world point under the initial pinch center "locked"
-  const lockX = pinch.startViewX * r + (centerX - baseLeft) - (pinch.startCenterX - baseLeft) * r;
-  const lockY = pinch.startViewY * r + (centerY - baseTop)  - (pinch.startCenterY - baseTop)  * r;
+      // Lock to default when at or under min zoom
+      if (newScale <= VIEW_MIN + EPS) {
+        view.scale = VIEW_MIN;
+        view.x = 0;
+        view.y = 0;
+        draw();
+        return;
+      }
 
-  // As we approach min zoom, blend that pan toward 0 (home) to avoid a last-frame snap
-  const denom = Math.max(EPS, pinch.startScale - VIEW_MIN);
-  const t = (newScale - VIEW_MIN) / denom;  // 1 at start scale, 0 at min
-  const alpha = smoothstep(t);
+      const ratio = newScale / pinch.startScale;
 
-  view.x = lockX * alpha;
-  view.y = lockY * alpha;
-  view.scale = newScale;
+      // Keep the world point under the initial pinch center "locked" under the current center
+      view.x = pinch.startViewX * ratio + (centerX - baseLeft) - (pinch.startCenterX - baseLeft) * ratio;
+      view.y = pinch.startViewY * ratio + (centerY - baseTop) - (pinch.startCenterY - baseTop) * ratio;
+      view.scale = newScale;
 
-  // If we’re effectively at min, lock perfectly
-  clampViewAtMin();
-
-  draw();
-}
+      draw();
+    }
 
     function onPointerDown(e) {
       canvas.setPointerCapture?.(e.pointerId);
