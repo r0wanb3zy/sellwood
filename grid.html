@@ -194,7 +194,8 @@
     // Snap the stroke center onto the device pixel grid
     function crispCoord(v, lineWidthCss) {
       const lwDev = lineWidthCss * dpr;
-      const isOddDevicePx = Math.abs(lwDev - Math.round(lwDev)) < 1e-6 && (Math.round(lwDev) % 2 === 1);
+      const isInt = Math.abs(lwDev - Math.round(lwDev)) < 1e-6;
+      const isOddDevicePx = isInt && (Math.round(lwDev) % 2 === 1);
       const centerOffsetDev = isOddDevicePx ? 0.5 : 0; // 1px stroke centers at N+0.5 device px
       return (Math.round(v * dpr) + centerOffsetDev) / dpr;
     }
@@ -221,8 +222,11 @@
       const yMax = MM_H;
 
       ctx.save();
+
+      // Expand the clipping rect by half the stroke width so edge strokes aren’t clipped
+      const half = Math.max(minorLW, majorLW) / 2; // CSS px
       ctx.beginPath();
-      ctx.rect(gridLeft, gridTop, gridW, gridH);
+      ctx.rect(gridLeft - half, gridTop - half, gridW + 2 * half, gridH + 2 * half);
       ctx.clip();
 
       // Minor lines (every 50 mm)
@@ -287,8 +291,6 @@
       ctx.restore();
     }
 
-    function plot() { draw(); }
-
     // Draw the SVG on top of the grid at 1:1 mm scale, anchored at 0 mm
     function drawSvgOverlay({ scale, gridLeft, gridTop }) {
       if (!svgInfo || !svgInfo.img || !svgInfo.mmSize.width || !svgInfo.mmSize.height) return;
@@ -299,9 +301,10 @@
       const dy = gridTop;                           // align top to extended grid
 
       ctx.save();
-      // Optional: clip to the grid bounds (includes the extra top mm)
+      // Clip to grid bounds, expanded by half a device pixel to avoid trimming
+      const half = 0.5 / dpr; // CSS px
       ctx.beginPath();
-      ctx.rect(gridLeft, gridTop, MM_W * scale, (MM_H + EXTRA_TOP_MM) * scale);
+      ctx.rect(gridLeft - half, gridTop - half, MM_W * scale + 2 * half, (MM_H + EXTRA_TOP_MM) * scale + 2 * half);
       ctx.clip();
 
       ctx.drawImage(svgInfo.img, dx, dy, destW, destH);
