@@ -99,12 +99,12 @@
 
 <script>
   (function () {
-    const MM_W = 2100;      // grid width in mm
-    const MM_H = 3700;      // grid height in mm
-    const EXTRA_TOP_MM = 130; // NEW: visible headroom above 0 (negative Y)
-    const MAJOR_MM = 100;   // major step
-    const MINOR_MM = 50;    // minor step
-    const FIT = 'height';   // fill stage height
+    const MM_W = 2100;        // grid width in mm
+    const MM_H = 3700;        // grid height in mm
+    const EXTRA_TOP_MM = 130; // visible headroom above 0 (negative Y)
+    const MAJOR_MM = 100;     // major step
+    const MINOR_MM = 50;      // minor step
+    const FIT = 'height';     // fill stage height
 
     // Your SVG
     const SVG_URL = 'https://raw.githubusercontent.com/r0wanb3zy/sellwood/3cd40a78c70ee216249f1e8198b367794f09a8ae/images/grid/D36.svg';
@@ -116,21 +116,48 @@
     const yInput = document.getElementById('ymm');
     const stage = document.querySelector('.stage');
 
-    let dpr = Math.max(1, window.devicePixelRatio || 1);
+    // Effective DPR includes pinch-zoom scale
+    let dpr = 1;
+
+    function getEffectiveDpr() {
+      const base = Math.max(1, window.devicePixelRatio || 1);
+      const zoom = (window.visualViewport && window.visualViewport.scale) ? window.visualViewport.scale : 1;
+      // Cap to avoid huge canvases on extreme zoom (tweak as needed)
+      return Math.min(6, base * zoom);
+    }
+
     let svgInfo = null; // holds loaded SVG + size in mm
 
+    // Throttle expensive resizes to animation frames
+    let rafId = 0;
+    function scheduleResize() {
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = 0;
+        resizeCanvas();
+      });
+    }
+
     function resizeCanvas() {
-      dpr = Math.max(1, window.devicePixelRatio || 1);
+      dpr = getEffectiveDpr();
+
       const rect = canvas.getBoundingClientRect();
-      canvas.width  = Math.max(1, Math.round(rect.width * dpr));
-      canvas.height = Math.max(1, Math.round(rect.height * dpr));
+      const w = Math.max(1, Math.round(rect.width * dpr));
+      const h = Math.max(1, Math.round(rect.height * dpr));
+
+      if (canvas.width !== w) canvas.width = w;
+      if (canvas.height !== h) canvas.height = h;
+
+      // 1 CSS px in the drawing API == 1 CSS px on the page
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.imageSmoothingEnabled = false; // keeps raster overlays sharper
+
       draw();
     }
 
     function computeLayout() {
-      const width = canvas.width / dpr;
-      const height = canvas.height / dpr;
+      const width = canvas.width / dpr;   // CSS px
+      const height = canvas.height / dpr; // CSS px
 
       const MM_TOTAL_H = MM_H + EXTRA_TOP_MM;
 
@@ -158,17 +185,18 @@
       return { width, height, scale, gridW, gridH, gridLeft, gridTop };
     }
 
+    // Always draw 1 physical pixel-wide lines
     function lineWidths() {
-      const minor = (dpr >= 1) ? 0.5 : .5;
-      const major = (dpr >= 1) ? 0.5 : .5;
-      return { minor, major };
+      const oneDevicePxInCss = 1 / dpr;
+      return { minor: oneDevicePxInCss, major: oneDevicePxInCss };
     }
 
-    function crispCoord(v, lineWidth) {
-      const isFractional = Math.abs(lineWidth - Math.round(lineWidth)) > 1e-6;
-      const isOddInt = !isFractional && (Math.round(lineWidth) % 2 === 1);
-      if (isFractional || isOddInt) return Math.floor(v) + 0.5;
-      return Math.round(v);
+    // Snap the stroke center onto the device pixel grid
+    function crispCoord(v, lineWidthCss) {
+      const lwDev = lineWidthCss * dpr;
+      const isOddDevicePx = Math.abs(lwDev - Math.round(lwDev)) < 1e-6 && (Math.round(lwDev) % 2 === 1);
+      const centerOffsetDev = isOddDevicePx ? 0.5 : 0; // 1px stroke centers at N+0.5 device px
+      return (Math.round(v * dpr) + centerOffsetDev) / dpr;
     }
 
     function draw() {
@@ -201,7 +229,7 @@
       ctx.strokeStyle = minorColor;
       ctx.lineWidth = minorLW;
 
-      // Vertical (X) minor lines unchanged
+      // Vertical (X) minor lines
       for (let xm = MINOR_MM; xm < MM_W; xm += MINOR_MM) {
         if (xm % MAJOR_MM === 0) continue;
         const x = crispCoord(gridLeft + xm * scale, ctx.lineWidth);
@@ -250,7 +278,7 @@
       const y = gridTop + (EXTRA_TOP_MM + ymm) * scale; // shift by the extra top mm
       const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#e53935';
 
-      const r = 3;
+      const r = 3; // CSS px radius; scales with DPR for smooth circles
       ctx.save();
       ctx.beginPath();
       ctx.arc(x, y, r, 0, Math.PI * 2);
@@ -275,9 +303,6 @@
       ctx.beginPath();
       ctx.rect(gridLeft, gridTop, MM_W * scale, (MM_H + EXTRA_TOP_MM) * scale);
       ctx.clip();
-
-      // Optional: keep the grid visible on top
-      // ctx.globalAlpha = 0.95;
 
       ctx.drawImage(svgInfo.img, dx, dy, destW, destH);
       ctx.restore();
@@ -357,19 +382,25 @@
       .catch(err => console.error('SVG load/parse failed:', err));
 
     // Keep canvas sized to viewport and layout changes
-    window.addEventListener('resize', resizeCanvas);
-    window.addEventListener('orientationchange', resizeCanvas);
+    window.addEventListener('resize', scheduleResize);
+    window.addEventListener('orientationchange', scheduleResize);
 
     if ('ResizeObserver' in window) {
-      const ro = new ResizeObserver(() => resizeCanvas());
+      const ro = new ResizeObserver(() => scheduleResize());
       ro.observe(stage);
     }
 
+    // Redraw when pinch-zooming or panning the visual viewport
+    if (window.visualViewport) {
+      visualViewport.addEventListener('resize', scheduleResize, { passive: true });
+      visualViewport.addEventListener('scroll', scheduleResize, { passive: true });
+    }
+
     // Dynamic inputs
-    xInput.addEventListener('input', plot);
-    yInput.addEventListener('input', plot);
+    xInput.addEventListener('input', draw);
+    yInput.addEventListener('input', draw);
     [xInput, yInput].forEach(el =>
-      el.addEventListener('keydown', e => { if (e.key === 'Enter') plot(); })
+      el.addEventListener('keydown', e => { if (e.key === 'Enter') draw(); })
     );
   })();
 </script>
