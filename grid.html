@@ -200,19 +200,19 @@
       return (Math.round(v * dpr) + centerOffsetDev) / dpr;
     }
 
-function draw() {
-  const { width, height, scale, gridW, gridH, gridLeft, gridTop } = computeLayout();
-  const { minor, major } = lineWidths();
+    function draw() {
+      const { width, height, scale, gridW, gridH, gridLeft, gridTop } = computeLayout();
+      const { minor, major } = lineWidths();
 
-  // Clear
-  ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = '#fff';
-  ctx.fillRect(0, 0, width, height);
+      // Clear
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, width, height);
 
-  drawGrid({ scale, gridW, gridH, gridLeft, gridTop, minorLW: minor, majorLW: major });
-  drawSvgOverlay({ scale, gridLeft, gridTop });
-  drawCrosshair({ scale, gridLeft, gridTop }); // was: drawDot(...)
-}
+      drawGrid({ scale, gridW, gridH, gridLeft, gridTop, minorLW: minor, majorLW: major });
+      drawSvgOverlay({ scale, gridLeft, gridTop }); // anchored to 0 mm (below)
+      drawDot({ scale, gridLeft, gridTop });
+    }
 
     function drawGrid({ scale, gridW, gridH, gridLeft, gridTop, minorLW, majorLW }) {
   const minorColor = getComputedStyle(document.documentElement).getPropertyValue('--minor').trim() || '#d9d9d9';
@@ -272,56 +272,23 @@ function draw() {
   ctx.restore();
 }
 
-function drawCrosshair({ scale, gridLeft, gridTop }) {
-  const xmm = parseFloat(xInput.value);
-  const ymm = parseFloat(yInput.value);
-  if (!isFinite(xmm) || !isFinite(ymm)) return;
+    function drawDot({ scale, gridLeft, gridTop }) {
+      const xmm = parseFloat(xInput.value);
+      const ymm = parseFloat(yInput.value);
+      if (!isFinite(xmm) || !isFinite(ymm)) return;
 
-  // Position in CSS px
-  const x = gridLeft + xmm * scale;
-  const y = gridTop + (EXTRA_TOP_MM + ymm) * scale;
+      const x = gridLeft + xmm * scale;
+      const y = gridTop + (EXTRA_TOP_MM + ymm) * scale; // shift by the extra top mm
+      const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#e53935';
 
-  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#e53935';
-
-  // Style: 1 device pixel-wide lines, fixed-length arms in screen px
-  const lw = 2.5 / dpr;        // CSS px => 1 device px
-  const arm = 10;            // length of each arm (CSS px)
-  const gap = 0;             // center gap so the exact point is visible (CSS px)
-
-  // If you prefer mm-based sizes instead, uncomment these:
-  // const arm = 30 * scale;  // 30 mm arms
-  // const gap = 6 * scale;   // 6 mm center gap
-
-  const xC = crispCoord(x, lw);
-  const yC = crispCoord(y, lw);
-
-  ctx.save();
-  ctx.strokeStyle = accent;
-  ctx.lineWidth = lw;
-  ctx.lineCap = 'butt';
-
-  // Horizontal arms
-  ctx.beginPath();
-  ctx.moveTo(crispCoord(x - gap - arm, lw), yC);
-  ctx.lineTo(crispCoord(x - gap,       lw), yC);
-  ctx.moveTo(crispCoord(x + gap,       lw), yC);
-  ctx.lineTo(crispCoord(x + gap + arm, lw), yC);
-
-  // Vertical arms
-  ctx.moveTo(xC, crispCoord(y - gap - arm, lw));
-  ctx.lineTo(xC, crispCoord(y - gap,       lw));
-  ctx.moveTo(xC, crispCoord(y + gap,       lw));
-  ctx.lineTo(xC, crispCoord(y + gap + arm, lw));
-  ctx.stroke();
-
-  // Optional: tiny center dot
-  // ctx.beginPath();
-  // ctx.arc(x, y, 1.5, 0, Math.PI * 2);
-  // ctx.fillStyle = accent;
-  // ctx.fill();
-
-  ctx.restore();
-}
+      const r = 3; // CSS px radius; scales with DPR for smooth circles
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fillStyle = accent;
+      ctx.fill();
+      ctx.restore();
+    }
 
     // Draw the SVG on top of the grid at 1:1 mm scale, anchored at 0 mm
     function drawSvgOverlay({ scale, gridLeft, gridTop }) {
