@@ -910,13 +910,13 @@
 
     [xInput, yInput].forEach(enableSelectAllOnFocus);
 
-    // Reset button: clear inputs to show placeholders, keep current model and view
-    clearBtn.addEventListener('click', () => {
-      xInput.value = '';
-      yInput.value = '';
-      saveXY();
-      draw();
-    });
+// Reset button: clear inputs and reset zoom/pan to default (keep current model)
+clearBtn.addEventListener('click', () => {
+  xInput.value = '';
+  yInput.value = '';
+  saveXY();
+  resetView(); // sets view.scale = VIEW_MIN; view.x = 0; view.y = 0; and calls draw()
+});
 
     // Desktop wheel zoom
     canvas.addEventListener('wheel', wheelZoomHandler, { passive: false });
