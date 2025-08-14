@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta
     name="viewport"
-    content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=5, viewport-fit=cover"
+      content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=5, viewport-fit=cover"
   />
   <title>2100×3700 mm Grid Plotter (no labels)</title>
   <style>
@@ -198,13 +198,13 @@
       return MODELS[key];
     }
 
-// View transform for desktop zoom/pan
-const view = { scale: 1, x: 0, y: 0 };
-const VIEW_MIN = 1;      // don't allow zooming out past the default fit
-const VIEW_MAX = 16;
+    // View transform for desktop zoom/pan
+    const view = { scale: 1, x: 0, y: 0 }; // scale factor and pan (CSS px)
+    const VIEW_MIN = 1;   // don't allow zooming out past the default fit
+    const VIEW_MAX = 16;
 
     function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
-    function resetView() { view.scale = 1; view.x = 0; view.y = 0; draw(); }
+    function resetView() { view.scale = VIEW_MIN; view.x = 0; view.y = 0; draw(); }
 
     // Throttle expensive resizes to animation frames
     let rafId = 0;
@@ -229,6 +229,13 @@ const VIEW_MAX = 16;
       // 1 CSS px in the drawing API == 1 CSS px on the page
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.imageSmoothingEnabled = false; // keeps raster overlays sharper
+
+      // If we’re at default zoom, keep the default offsets after resize
+      if (view.scale <= VIEW_MIN + 1e-6) {
+        view.scale = VIEW_MIN;
+        view.x = 0;
+        view.y = 0;
+      }
 
       draw();
     }
@@ -521,7 +528,7 @@ const VIEW_MAX = 16;
       }
     }
 
-    // Desktop wheel-to-zoom centered at cursor
+    // Desktop wheel-to-zoom centered at cursor, snapping to default when at min zoom
     function wheelZoomHandler(e) {
       // Only act when the wheel is over the canvas
       e.preventDefault();
@@ -537,23 +544,33 @@ const VIEW_MAX = 16;
                     : (e.deltaMode === 2) ? (e.deltaY * rect.height)
                     : e.deltaY;
 
-      // Zoom factor: 300px of wheel = 2x change
+      // Zoom factor: ~300px of wheel = 2x change
       const factor = Math.exp(-deltaPx / 300);
 
       const prevVS = view.scale;
       const nextVS = clamp(prevVS * factor, VIEW_MIN, VIEW_MAX);
-      if (nextVS === prevVS) return;
 
-      // World coords under the cursor before zoom (in mm space, with extraTop folded into Y later)
-      const curScalePxPerMm = baseScale * prevVS;
-      const gx = (px - (baseLeft + view.x)) / curScalePxPerMm; // mm
-      const gyPlus = (py - (baseTop + view.y)) / curScalePxPerMm; // mm including extraTop
+      // If no effective change, bail
+      if (Math.abs(nextVS - prevVS) < 1e-6) return;
 
-      // Apply zoom while keeping (gx, gyPlus) under the cursor
+      // If we’re clamping to the default zoom, snap pan to default too
+      if (nextVS <= VIEW_MIN + 1e-6) {
+        view.scale = VIEW_MIN;
+        view.x = 0;
+        view.y = 0;
+        draw();
+        return;
+      }
+
+      // Otherwise, zoom around cursor keeping the world point stable
+      const curScale = baseScale * prevVS;
+      const gx = (px - (baseLeft + view.x)) / curScale; // mm
+      const gy = (py - (baseTop + view.y)) / curScale;  // mm (includes extraTop shift later)
+
       view.scale = nextVS;
-      const newScalePxPerMm = baseScale * view.scale;
-      view.x = px - baseLeft - gx * newScalePxPerMm;
-      view.y = py - baseTop - gyPlus * newScalePxPerMm;
+      const newScale = baseScale * view.scale;
+      view.x = px - baseLeft - gx * newScale;
+      view.y = py - baseTop - gy * newScale;
 
       draw();
     }
