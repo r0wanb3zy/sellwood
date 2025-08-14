@@ -638,10 +638,10 @@
 
     [xInput, yInput].forEach(enableSelectAllOnFocus);
 
-// Reset button: set dot to 0,0, keep current model and view
+// Reset button: clear inputs to show placeholders, keep current model and view
 clearBtn.addEventListener('click', () => {
-  xInput.value = String(DEFAULT_X);
-  yInput.value = String(DEFAULT_Y);
+  xInput.value = '';
+  yInput.value = '';
   saveXY();
   draw();
 });
