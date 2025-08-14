@@ -145,6 +145,7 @@
       <div class="row">
         <select id="modelSelect" aria-label="Choose model">
           <option value="" selected disabled>Model</option>
+          <option value="P30">P30</option>
           <option value="P36">P36</option>
           <option value="D36">D36</option>
         </select>
@@ -185,7 +186,14 @@
 
     // Each model now carries its own mm width/height
     const MODELS = {
-      P36: {
+      P30: {
+        label: 'P30',
+        mmW: 1900,
+        mmH: 3100,
+        extraTop: 140,
+        svg: 'https://raw.githubusercontent.com/r0wanb3zy/sellwood/daf34db1ea063944348b1a2a382e8036d6834475/images/grid/P36.svg'
+      },
+            P36: {
         label: 'P36',
         mmW: 1900,
         mmH: 3700,
