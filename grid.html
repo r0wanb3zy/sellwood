@@ -7,7 +7,7 @@
       content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=5, viewport-fit=cover"
   />
   <title>2100×3700 mm Grid Plotter (no labels)</title>
-   <style>
+  <style>
     :root {
       --ui-bg: #f8f9fb;
       --ui-border: rgba(0, 0, 0, 0.12);
@@ -70,6 +70,7 @@
       text-align: center; /* Centers text and placeholder */
     }
 
+    /* UPDATED: normalized select centering across browsers */
     select {
       width: 80px; /* Increased width to prevent text cutoff */
       padding: 8px 10px;
@@ -77,13 +78,33 @@
       border-radius: 8px;
       background: #fff;
       color: #111;
-      text-align: center; /* Centers text in select */
-      text-align-last: center; /* Ensures text is centered in dropdown options */
+
+      appearance: none;
       -webkit-appearance: none; /* Removes default arrow in Chrome/Safari */
-      -moz-appearance: none; /* Removes default arrow in Firefox */
-      appearance: none; /* Standard property to remove default arrow */
-      background-image: none; /* Ensures no default arrow is shown */
+      -moz-appearance: none;    /* Removes default arrow in Firefox */
+      background-image: none;   /* Ensures no default arrow is shown */
+
+      text-align: center;       /* Center in most browsers */
+
+      /* Normalize hidden engine padding/indent that push text right in WebKit */
+      text-indent: 0;
+      -webkit-padding-start: 10px;
+      -webkit-padding-end: 10px;
     }
+
+    /* Hide old IE/Edge chevron */
+    select::-ms-expand { display: none; }
+
+    /* Firefox: center the selected value (and optionally dropdown options) */
+    @-moz-document url-prefix() {
+      select { text-align-last: center; }
+      select > option { text-align: center; } /* optional; centers items in the open list */
+    }
+
+    /* Optional: if text still looks optically right-shifted in some WebKit builds, nudge left a hair */
+    /* @supports (-webkit-appearance: none) {
+      select { text-indent: -1px; }
+    } */
 
     input::placeholder { color: #9aa3ad; opacity: 1; }
     input::-webkit-outer-spin-button,
