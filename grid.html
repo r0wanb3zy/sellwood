@@ -168,8 +168,10 @@
 
 <script>
   (function () {
-    const MM_W = 2100;
-    const MM_H = 3700;
+    // Defaults used when no model is selected
+    const DEFAULT_MM_W = 2100;
+    const DEFAULT_MM_H = 3700;
+
     const MAJOR_MM = 100;
     const MINOR_MM = 50;
     const FIT = 'height';
@@ -181,17 +183,30 @@
     const LABEL_MIN_SPACING_PX = 48; // try to keep ~48px between labels
     const LABEL_FONT_PX = 12;        // comfortable, crisp on phones/tablets/desktop
 
+    // Each model now carries its own mm width/height
     const MODELS = {
       P36: {
         label: 'P36',
+        mmW: 1900,
+        mmH: 3700,
         extraTop: 140,
         svg: 'https://raw.githubusercontent.com/r0wanb3zy/sellwood/48fb4eb18138e5922340c8f00ca5dc6c558d8658/images/grid/P36.svg'
       },
       D36: {
         label: 'D36',
+        mmW: 2100,
+        mmH: 3700,
         extraTop: 130,
         svg: 'https://raw.githubusercontent.com/r0wanb3zy/sellwood/db623e0ebb340830cd97cc99f9a4e217a5c5710c/images/grid/D36.svg'
       }
+    };
+
+    const DEFAULT_MODEL_CONFIG = {
+      label: 'None',
+      mmW: DEFAULT_MM_W,
+      mmH: DEFAULT_MM_H,
+      extraTop: 0,
+      svg: null
     };
 
     const canvas = document.getElementById('grid');
@@ -223,8 +238,7 @@
     let svgInfo = null;
 
     function getModelConfig(key = selectedModel) {
-      if (!key || !MODELS[key]) return { label: 'None', extraTop: 0, svg: null };
-      return MODELS[key];
+      return (key && MODELS[key]) ? MODELS[key] : DEFAULT_MODEL_CONFIG;
     }
 
     // View transform (shared by desktop + mobile)
@@ -277,34 +291,34 @@
     }
 
     function computeLayout() {
-      const { extraTop } = getModelConfig();
+      const { extraTop, mmW, mmH } = getModelConfig();
       const width = canvas.width / dpr;
       const height = canvas.height / dpr;
 
-      const MM_TOTAL_H = MM_H + extraTop;
+      const MM_TOTAL_H = mmH + extraTop;
 
       let scale, gridW, gridH, gridLeft, gridTop;
 
       if (FIT === 'width') {
-        scale = width / MM_W;
+        scale = width / mmW;
         gridW = width;
         gridH = MM_TOTAL_H * scale;
         gridLeft = 0;
         gridTop = Math.max(0, (height - gridH) / 2);
       } else if (FIT === 'contain') {
-        scale = Math.min(width / MM_W, height / MM_TOTAL_H);
-        gridW = MM_W * scale;
+        scale = Math.min(width / mmW, height / MM_TOTAL_H);
+        gridW = mmW * scale;
         gridH = MM_TOTAL_H * scale;
         gridLeft = Math.max(0, (width - gridW) / 2);
         gridTop = Math.max(0, (height - gridH) / 2);
       } else { // 'height'
         scale = height / MM_TOTAL_H;
         gridH = height;
-        gridW = MM_W * scale;
+        gridW = mmW * scale;
         gridLeft = Math.max(0, (width - gridW) / 2);
         gridTop = 0;
       }
-      return { width, height, scale, gridW, gridH, gridLeft, gridTop, extraTop };
+      return { width, height, scale, gridW, gridH, gridLeft, gridTop, extraTop, mmW, mmH };
     }
 
     function lineWidths(scale) {
@@ -326,7 +340,7 @@
     }
 
     function draw() {
-      const { width, height, scale: baseScale, gridLeft: baseLeft, gridTop: baseTop, extraTop } = computeLayout();
+      const { width, height, scale: baseScale, gridLeft: baseLeft, gridTop: baseTop, extraTop, mmW, mmH } = computeLayout();
 
       const mm2px = baseScale * view.scale;
 
@@ -339,24 +353,24 @@
 
       const { minor, major } = lineWidths(mm2px);
 
-      const gridW = MM_W * mm2px;
-      const gridH = (MM_H + extraTop) * mm2px;
+      const gridW = mmW * mm2px;
+      const gridH = (mmH + extraTop) * mm2px;
 
-      drawGrid({ scale: mm2px, gridW, gridH, gridLeft, gridTop, minorLW: minor, majorLW: major, extraTop });
-      drawSvgOverlay({ scale: mm2px, gridLeft, gridTop, extraTop });
+      drawGrid({ mmW, mmH, scale: mm2px, gridW, gridH, gridLeft, gridTop, minorLW: minor, majorLW: major, extraTop });
+      drawSvgOverlay({ mmW, mmH, scale: mm2px, gridLeft, gridTop, extraTop });
 
       // Axis labels: X pinned to bottom, Y outside the grid's left edge (auto-shift to stay visible)
-      drawAxisLabelsPinned({ scale: mm2px, gridLeft, gridTop, extraTop, width, height });
+      drawAxisLabelsPinned({ mmW, mmH, scale: mm2px, gridLeft, gridTop, extraTop, width, height });
 
       drawDot({ scale: mm2px, gridLeft, gridTop, extraTop });
     }
 
-    function drawGrid({ scale, gridW, gridH, gridLeft, gridTop, minorLW, majorLW, extraTop }) {
+    function drawGrid({ mmW, mmH, scale, gridW, gridH, gridLeft, gridTop, minorLW, majorLW, extraTop }) {
       const minorColor = getComputedStyle(document.documentElement).getPropertyValue('--minor').trim() || '#d9d9d9';
       const majorColor = getComputedStyle(document.documentElement).getPropertyValue('--major').trim() || '#7a7a7a';
 
       const yMin = -extraTop;
-      const yMax = MM_H;
+      const yMax = mmH;
 
       ctx.save();
       const clipPadding = 1 / dpr;
@@ -368,7 +382,7 @@
       ctx.strokeStyle = minorColor;
       ctx.lineWidth = minorLW;
 
-      for (let xm = MINOR_MM; xm < MM_W; xm += MINOR_MM) {
+      for (let xm = MINOR_MM; xm < mmW; xm += MINOR_MM) {
         if (xm % MAJOR_MM === 0) continue;
         const x = crispCoord(gridLeft + xm * scale, ctx.lineWidth);
         ctx.beginPath();
@@ -389,7 +403,7 @@
       ctx.strokeStyle = majorColor;
       ctx.lineWidth = majorLW;
 
-      for (let xm = 0; xm <= MM_W; xm += MAJOR_MM) {
+      for (let xm = 0; xm <= mmW; xm += MAJOR_MM) {
         const x = crispCoord(gridLeft + xm * scale, ctx.lineWidth);
         ctx.beginPath();
         ctx.moveTo(x, gridTop);
@@ -408,7 +422,7 @@
 
     // Axis labels: X pinned to bottom, Y just outside the grid's left edge.
     // For Y, auto-shift right to keep the entire label visible within the canvas.
-    function drawAxisLabelsPinned({ scale, gridLeft, gridTop, extraTop, width, height }) {
+    function drawAxisLabelsPinned({ mmW, mmH, scale, gridLeft, gridTop, extraTop, width, height }) {
       const labelColor = getComputedStyle(document.documentElement).getPropertyValue('--label-color').trim() || '#111';
       const labelHalo  = getComputedStyle(document.documentElement).getPropertyValue('--label-halo').trim()  || 'rgba(255,255,255,0.92)';
 
@@ -425,13 +439,13 @@
 
       // Visible world ranges (clamped to grid domain)
       const xMinMmVisible = Math.max(0, (0 - gridLeft) / scale);
-      const xMaxMmVisible = Math.min(MM_W, (width - gridLeft) / scale);
+      const xMaxMmVisible = Math.min(mmW, (width - gridLeft) / scale);
 
       const yMinMmVisible = Math.max(0, (0 - gridTop) / scale - extraTop);
-      const yMaxMmVisible = Math.min(MM_H, (height - gridTop) / scale - extraTop);
+      const yMaxMmVisible = Math.min(mmH, (height - gridTop) / scale - extraTop);
 
       // Bottom X labels (pinned to bottom of canvas)
-      if (xMaxMmVisible >= 0 && xMinMmVisible <= MM_W) {
+      if (xMaxMmVisible >= 0 && xMinMmVisible <= mmW) {
         ctx.save();
         ctx.font = `600 ${fontPx}px system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Helvetica, Arial`;
         ctx.textAlign = 'center';
@@ -455,7 +469,7 @@
       }
 
       // Left Y labels (outside the grid's left edge; auto-shift to keep fully visible)
-      if (yMaxMmVisible >= 0 && yMinMmVisible <= MM_H) {
+      if (yMaxMmVisible >= 0 && yMinMmVisible <= mmH) {
         ctx.save();
         ctx.font = `600 ${fontPx}px system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Helvetica, Arial`;
         ctx.textAlign = 'right';
@@ -528,7 +542,7 @@
       ctx.restore();
     }
 
-    function drawSvgOverlay({ scale, gridLeft, gridTop, extraTop }) {
+    function drawSvgOverlay({ mmW, mmH, scale, gridLeft, gridTop, extraTop }) {
       if (!svgInfo || !svgInfo.img || !svgInfo.mmSize.width || !svgInfo.mmSize.height) return;
 
       const destW = svgInfo.mmSize.width * scale;
@@ -539,7 +553,7 @@
       ctx.save();
       const half = 0.5 / dpr;
       ctx.beginPath();
-      ctx.rect(gridLeft - half, gridTop - half, MM_W * scale + 2 * half, (MM_H + extraTop) * scale + 2 * half);
+      ctx.rect(gridLeft - half, gridTop - half, mmW * scale + 2 * half, (mmH + extraTop) * scale + 2 * half);
       ctx.clip();
 
       ctx.drawImage(svgInfo.img, dx, dy, destW, destH);
