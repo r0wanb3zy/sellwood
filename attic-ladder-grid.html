@@ -486,29 +486,36 @@
       const yMinMmVisible = Math.max(0, (0 - gridTop) / scale - extraTop);
       const yMaxMmVisible = Math.min(mmH, (height - gridTop) / scale - extraTop);
 
-      // Bottom X labels (pinned to bottom of canvas)
-      if (xMaxMmVisible >= 0 && xMinMmVisible <= mmW) {
-        ctx.save();
-        ctx.font = `600 ${fontPx}px system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Helvetica, Arial`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'bottom';
-        ctx.lineJoin = 'round';
-        ctx.miterLimit = 2;
+// Bottom X labels (anchored to the grid bottom; auto-shift up to stay visible)
+if (xMaxMmVisible >= 0 && xMinMmVisible <= mmW) {
+  ctx.save();
+  ctx.font = `600 ${fontPx}px system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Helvetica, Arial`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.lineJoin = 'round';
+  ctx.miterLimit = 2;
 
-        const yBottom = height - margin;
+  // Position: just below the grid bottom
+  const gridBottom = gridTop + (extraTop + mmH) * scale;
+  const desiredTop = gridBottom + outsideGap;
 
-        const startX = Math.ceil(xMinMmVisible / step) * step;
-        for (let xm = startX; xm <= xMaxMmVisible; xm += step) {
-          const sx = alignToDevicePixel(gridLeft + xm * scale);
-          const text = String(xm);
-          ctx.lineWidth = haloWidth;
-          ctx.strokeStyle = labelHalo;
-          ctx.strokeText(text, sx, yBottom);
-          ctx.fillStyle = labelColor;
-          ctx.fillText(text, sx, yBottom);
-        }
-        ctx.restore();
-      }
+  // Keep on-screen if the grid bottom is below the canvas bottom
+  const haloPad = Math.ceil(haloWidth / 2) + 1;
+  const maxTop = height - margin - fontPx - haloPad;
+  const yTop = alignToDevicePixel(Math.min(desiredTop, maxTop));
+
+  const startX = Math.ceil(xMinMmVisible / step) * step;
+  for (let xm = startX; xm <= xMaxMmVisible; xm += step) {
+    const sx = alignToDevicePixel(gridLeft + xm * scale);
+    const text = String(xm);
+    ctx.lineWidth = haloWidth;
+    ctx.strokeStyle = labelHalo;
+    ctx.strokeText(text, sx, yTop);
+    ctx.fillStyle = labelColor;
+    ctx.fillText(text, sx, yTop);
+  }
+  ctx.restore();
+}
 
       // Left Y labels (outside the grid's left edge; auto-shift to keep fully visible)
       if (yMaxMmVisible >= 0 && yMinMmVisible <= mmH) {
