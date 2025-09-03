@@ -132,54 +132,6 @@
       /* gestures handled in JS */
       touch-action: none;
     }
-
-    /* Settings modal */
-    .modal-backdrop[hidden] { display: none !important; }
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.4);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: 16px;
-    }
-    .modal {
-      width: min(420px, 92vw);
-      background: #fff;
-      border: 1px solid var(--ui-border);
-      border-radius: 12px;
-      box-shadow: 0 12px 32px rgba(0,0,0,0.18);
-      overflow: hidden;
-    }
-    .modal-header, .modal-footer {
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid var(--ui-border);
-    }
-    .modal-footer { border-top: 1px solid var(--ui-border); border-bottom: 0; }
-    .modal-body { padding: 16px; }
-    .modal-title { margin: 0; font-size: 16px; font-weight: 700; }
-    .icon-btn {
-      border: none;
-      background: transparent;
-      padding: 6px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 18px;
-      line-height: 1;
-    }
-    .icon-btn:hover { background: rgba(0,0,0,0.06); }
-    .checkbox {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      user-select: none;
-      cursor: pointer;
-    }
   </style>
 </head>
 <body>
@@ -211,45 +163,12 @@
         <input id="ymm" type="number" step="1" inputmode="decimal" placeholder="Y" aria-label="Y coordinate (mm)" />
       </div>
 
-      <!-- Settings (replaces old Reset) -->
-      <button id="settingsBtn" type="button" title="Settings">⚙️</button>
+      <button id="clearBtn" type="button" title="Reset to default (no model, empty inputs)">Reset</button>
     </div>
 
     <main class="stage">
       <canvas id="grid" aria-label="Millimeter grid canvas with numeric axis labels"></canvas>
     </main>
-  </div>
-
-  <!-- Settings Modal -->
-  <div id="settingsModal" class="modal-backdrop" hidden>
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-      <div class="modal-header">
-        <h2 id="settingsTitle" class="modal-title">Settings</h2>
-        <button id="settingsClose" class="icon-btn" title="Close" aria-label="Close">✕</button>
-      </div>
-      <div class="modal-body">
-        <div style="display:flex; flex-direction:column; gap:12px;">
-          <label class="checkbox" for="crosshairToggle">
-            <input id="crosshairToggle" type="checkbox" />
-            Show Crosshair
-          </label>
-
-          <label class="checkbox" for="lockXToggle" title="Prevent touch/drag from changing X. You can still type a new X value above.">
-            <input id="lockXToggle" type="checkbox" />
-            Lock X ➡️
-          </label>
-
-          <label class="checkbox" for="lockYToggle" title="Prevent touch/drag from changing Y. You can still type a new Y value above.">
-            <input id="lockYToggle" type="checkbox" />
-            Lock Y ⬇️
-          </label>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <!-- Reset button inside modal (same behavior as before) -->
-        <button id="clearBtn" type="button" title="Reset to default (no model, empty inputs)">Reset</button>
-      </div>
-    </div>
   </div>
 
 <script>
@@ -264,10 +183,6 @@
 
     const MINOR_MM_THICK = 0.25;
     const MAJOR_MM_THICK = 0.5;
-
-    // Crosshair thickness
-    const CROSSHAIR_LW_MAIN = 1.5; // px in main view
-    const CROSSHAIR_LW_LENS = 1; // px inside magnifier (thinner)
 
     // Labeling config
     const LABEL_MIN_SPACING_PX = 48;
@@ -317,24 +232,11 @@
     const modelSelect = document.getElementById('modelSelect');
     const xInput = document.getElementById('xmm');
     const yInput = document.getElementById('ymm');
-
-    // Settings modal elements
-    const settingsBtn = document.getElementById('settingsBtn');
-    const settingsModal = document.getElementById('settingsModal');
-    const settingsClose = document.getElementById('settingsClose');
-    const crosshairToggle = document.getElementById('crosshairToggle');
-    const lockXToggle = document.getElementById('lockXToggle');
-    const lockYToggle = document.getElementById('lockYToggle');
-
-    // Reset button now lives in the modal
     const clearBtn = document.getElementById('clearBtn');
     const stage = document.querySelector('.stage');
 
     const STORAGE_KEY_XY = 'grid-plotter-xy';
     const STORAGE_KEY_MODEL = 'grid-plotter-model';
-    const STORAGE_KEY_CROSSHAIR = 'grid-plotter-crosshair';
-    const STORAGE_KEY_LOCKX = 'grid-plotter-lock-x';
-    const STORAGE_KEY_LOCKY = 'grid-plotter-lock-y';
 
     const DEFAULT_X = 0;
     const DEFAULT_Y = 0;
@@ -439,13 +341,12 @@
       return { minor: minorCss, major: majorCss };
     }
 
-    // Enhanced to consider current transform scale (e.g., lens zoom)
-    function crispCoord(v, lineWidthCss, transformScale = 1) {
-      const lwDev = lineWidthCss * dpr * transformScale;
+    function crispCoord(v, lineWidthCss) {
+      const lwDev = lineWidthCss * dpr;
       const isInt = Math.abs(lwDev - Math.round(lwDev)) < 1e-6;
       const isOddDevicePx = isInt && (Math.round(lwDev) % 2 === 1);
       const centerOffsetDev = isOddDevicePx ? 0.5 : 0;
-      return (Math.round(v * dpr * transformScale) + centerOffsetDev) / (dpr * transformScale);
+      return (Math.round(v * dpr) + centerOffsetDev) / dpr;
     }
 
     function alignToDevicePixel(v) {
@@ -472,13 +373,9 @@
       drawGrid({ mmW, mmH, scale: mm2px, gridW, gridH, gridLeft, gridTop, minorLW: minor, majorLW: major, extraTop });
       drawSvgOverlay({ mmW, mmH, scale: mm2px, gridLeft, gridTop, extraTop });
 
-      // Crosshair (if enabled)
-      drawCrosshair({ mmW, mmH, scale: mm2px, gridLeft, gridTop, gridW, gridH, extraTop, lensZoom: 1 });
-
       // Axis labels
       drawAxisLabelsPinned({ mmW, mmH, scale: mm2px, gridLeft, gridTop, extraTop, width, height });
 
-      // Dot
       drawDot({ scale: mm2px, gridLeft, gridTop, extraTop, width, height, suppressLens: false, insideLens: false, lensZoom: 1 });
     }
 
@@ -709,54 +606,6 @@
       }
     }
 
-    // Crosshair drawer; supports lensZoom to keep thickness independent of lens scale
-    function drawCrosshair({ mmW, mmH, scale, gridLeft, gridTop, gridW, gridH, extraTop, lensZoom = 1 }) {
-      if (!isCrosshairEnabled()) return;
-
-      const xParsed = parseFloat(xInput.value);
-      const yParsed = parseFloat(yInput.value);
-      const xmm = Number.isFinite(xParsed) ? xParsed : DEFAULT_X;
-      const ymm = Number.isFinite(yParsed) ? yParsed : DEFAULT_Y;
-
-      const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#e53935';
-
-      const px = gridLeft + xmm * scale;
-      const py = gridTop + (extraTop + ymm) * scale;
-
-      // Desired on-screen thickness (CSS px), independent of lens zoom
-      const desiredCss = (lensZoom === 1) ? CROSSHAIR_LW_MAIN : CROSSHAIR_LW_LENS;
-      const effectiveLineWidth = desiredCss / lensZoom;
-
-      ctx.save();
-
-      // Clip to grid rect
-      const half = 0.5 / dpr;
-      ctx.beginPath();
-      ctx.rect(gridLeft - half, gridTop - half, gridW + 2 * half, gridH + 2 * half);
-      ctx.clip();
-
-      ctx.strokeStyle = accent;
-      ctx.lineWidth = effectiveLineWidth;
-
-      // Pixel-crisp alignment considering lens zoom
-      const cx = crispCoord(px, ctx.lineWidth, lensZoom);
-      const cy = crispCoord(py, ctx.lineWidth, lensZoom);
-
-      // Horizontal line (full width of grid)
-      ctx.beginPath();
-      ctx.moveTo(gridLeft, cy);
-      ctx.lineTo(gridLeft + gridW, cy);
-      ctx.stroke();
-
-      // Vertical line (full height of grid)
-      ctx.beginPath();
-      ctx.moveTo(cx, gridTop);
-      ctx.lineTo(cx, gridTop + gridH);
-      ctx.stroke();
-
-      ctx.restore();
-    }
-
     function drawMagnifier({ centerX, centerY, width, height, xmm, ymm, accent, labelHalo, labelColor, cssScale }) {
       const { lx, ly } = computeLensPlacement(centerX, centerY, width, height);
 
@@ -774,7 +623,7 @@
       ctx.fillStyle = '#fff';
       ctx.fillRect(lx - R - 2, ly - R - 2, (R + 2) * 2, (R + 2) * 2);
 
-      // Re-render content in the lens: grid + overlay + thinner crosshair + smaller dot
+      // Re-render content in the lens: grid + overlay + smaller dot
       ctx.save();
       ctx.translate(lx, ly);
       ctx.scale(zoom, zoom);
@@ -794,9 +643,6 @@
 
       // SVG overlay
       drawSvgOverlay({ mmW, mmH, scale: mm2px, gridLeft, gridTop, extraTop });
-
-      // Crosshair inside lens (thinner)
-      drawCrosshair({ mmW, mmH, scale: mm2px, gridLeft, gridTop, gridW, gridH, extraTop, lensZoom: zoom });
 
       // Draw the dot again inside the lens (smaller), suppress lens recursion
       drawDot({
@@ -977,47 +823,6 @@
       }
     }
 
-    function saveCrosshairSetting() {
-      try {
-        localStorage.setItem(STORAGE_KEY_CROSSHAIR, crosshairToggle.checked ? '1' : '0');
-      } catch (e) {}
-    }
-    function restoreCrosshairSetting() {
-      try {
-        const v = localStorage.getItem(STORAGE_KEY_CROSSHAIR);
-        if (v === '1') crosshairToggle.checked = true;
-        else if (v === '0') crosshairToggle.checked = false;
-      } catch (e) {}
-    }
-    function isCrosshairEnabled() {
-      return !!(crosshairToggle && crosshairToggle.checked);
-    }
-
-    function saveLockSettings() {
-      try {
-        localStorage.setItem(STORAGE_KEY_LOCKX, lockXToggle.checked ? '1' : '0');
-        localStorage.setItem(STORAGE_KEY_LOCKY, lockYToggle.checked ? '1' : '0');
-      } catch (e) {}
-    }
-    function restoreLockSettings() {
-      try {
-        const lx = localStorage.getItem(STORAGE_KEY_LOCKX);
-        const ly = localStorage.getItem(STORAGE_KEY_LOCKY);
-        if (lx === '1') lockXToggle.checked = true;
-        if (ly === '1') lockYToggle.checked = true;
-      } catch (e) {}
-      applyLockUI();
-    }
-    function isLockXEnabled() { return !!(lockXToggle && lockXToggle.checked); }
-    function isLockYEnabled() { return !!(lockYToggle && lockYToggle.checked); }
-    function applyLockUI() {
-      const lockX = isLockXEnabled();
-      const lockY = isLockYEnabled();
-      // Inputs remain editable as requested; just update titles for clarity
-      xInput.title = lockX ? 'X locked from touch/drag; input still editable' : '';
-      yInput.title = lockY ? 'Y locked from touch/drag; input still editable' : '';
-    }
-
     function setModel(key) {
       selectedModel = (key && MODELS[key]) ? key : DEFAULT_MODEL;
 
@@ -1168,10 +973,8 @@
       xmm = Math.round(clamp(xmm, 0, geom.mmW));
       ymm = Math.round(clamp(ymm, 0, geom.mmH));
 
-      // Apply locking: prevent canvas/touch from changing locked axes
-      if (!isLockXEnabled()) xInput.value = String(xmm);
-      if (!isLockYEnabled()) yInput.value = String(ymm);
-
+      xInput.value = String(xmm);
+      yInput.value = String(ymm);
       saveXY();
       draw();
     }
@@ -1330,24 +1133,10 @@
       draw();
     }
 
-    // Settings modal helpers
-    function openSettings() {
-      settingsModal.hidden = false;
-      // Optional: focus the first interactive element
-      setTimeout(() => {
-        try { crosshairToggle.focus(); } catch (e) {}
-      }, 0);
-    }
-    function closeSettings() {
-      settingsModal.hidden = true;
-    }
-
     // Init
     restoreXY();
     resizeCanvas();
     restoreModel();
-    restoreCrosshairSetting();
-    restoreLockSettings();
 
     window.addEventListener('resize', scheduleResize);
     window.addEventListener('orientationchange', scheduleResize);
@@ -1362,7 +1151,6 @@
       visualViewport.addEventListener('scroll', scheduleResize, { passive: true });
     }
 
-    // Inputs remain editable even when locked
     xInput.addEventListener('input', () => { saveXY(); draw(); });
     yInput.addEventListener('input', () => { saveXY(); draw(); });
     [xInput, yInput].forEach(el =>
@@ -1376,7 +1164,7 @@
 
     [xInput, yInput].forEach(enableSelectAllOnFocus);
 
-    // Reset button: clear inputs and reset zoom/pan (same as before)
+    // Reset button: clear inputs and reset zoom/pan
     clearBtn.addEventListener('click', () => {
       xInput.value = '';
       yInput.value = '';
@@ -1411,35 +1199,8 @@
     document.addEventListener('mousedown', blurIfOutsideInputs, { capture: true, passive: true });
     document.addEventListener('touchstart', blurIfOutsideInputs, { capture: true, passive: true });
 
-    // Settings modal interactions
-    settingsBtn.addEventListener('click', openSettings);
-    settingsClose.addEventListener('click', closeSettings);
-    settingsModal.addEventListener('click', (e) => {
-      if (e.target === settingsModal) closeSettings(); // click backdrop to close
-    });
-
-    crosshairToggle.addEventListener('change', () => {
-      saveCrosshairSetting();
-      draw();
-    });
-
-    lockXToggle.addEventListener('change', () => {
-      applyLockUI();
-      saveLockSettings();
-    });
-    lockYToggle.addEventListener('change', () => {
-      applyLockUI();
-      saveLockSettings();
-    });
-
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        // If modal is open, close it
-        if (!settingsModal.hidden) {
-          closeSettings();
-          return;
-        }
-        // Otherwise, blur active input if any
         const ae = document.activeElement;
         if (ae && (ae.matches('input, select, textarea, [contenteditable]'))) {
           ae.blur();
