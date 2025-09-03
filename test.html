@@ -199,6 +199,7 @@
     const LENS_ZOOM = 2.5;
     const LENS_BORDER_PX = 2;
     const LENS_MIN_MARGIN_PX = 8;
+    const LENS_DOT_SCALE = 0.6; // dot inside lens = 60% of normal (independent of lens zoom)
 
     // Models
     const MODELS = {
@@ -375,7 +376,7 @@
       // Axis labels
       drawAxisLabelsPinned({ mmW, mmH, scale: mm2px, gridLeft, gridTop, extraTop, width, height });
 
-      drawDot({ scale: mm2px, gridLeft, gridTop, extraTop, width, height, suppressLens: false });
+      drawDot({ scale: mm2px, gridLeft, gridTop, extraTop, width, height, suppressLens: false, insideLens: false, lensZoom: 1 });
     }
 
     function drawGrid({ mmW, mmH, scale, gridW, gridH, gridLeft, gridTop, minorLW, majorLW, extraTop }) {
@@ -557,7 +558,7 @@
       }
     }
 
-    function drawDot({ scale, gridLeft, gridTop, extraTop, width, height, suppressLens = false }) {
+    function drawDot({ scale, gridLeft, gridTop, extraTop, width, height, suppressLens = false, insideLens = false, lensZoom = 1 }) {
       const xParsed = parseFloat(xInput.value);
       const yParsed = parseFloat(yInput.value);
       const xmm = Number.isFinite(xParsed) ? xParsed : DEFAULT_X;
@@ -575,7 +576,12 @@
       const cssScale = 1 / pageZoom;
 
       const rCssBase = 4;
-      const rCss = rCssBase * cssScale;
+      let rCss = rCssBase * cssScale;
+
+      // Inside lens: make the dot smaller and cancel the lens zoom so its size is independent of LENS_ZOOM
+      if (insideLens) {
+        rCss = rCssBase * cssScale * (LENS_DOT_SCALE / Math.max(1e-6, lensZoom));
+      }
 
       const cx = alignToDevicePixel(x);
       const cy = alignToDevicePixel(y);
@@ -607,13 +613,17 @@
       const border = LENS_BORDER_PX * cssScale;
       const zoom = LENS_ZOOM;
 
-      // Clip to circular lens and re-render a zoomed view centered at the finger point
+      // Clip to circular lens
       ctx.save();
-
       ctx.beginPath();
       ctx.arc(lx, ly, R, 0, Math.PI * 2);
       ctx.clip();
 
+      // Fill lens background white to hide the original grid behind the bubble
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(lx - R - 2, ly - R - 2, (R + 2) * 2, (R + 2) * 2);
+
+      // Re-render content in the lens: ONLY overlay + smaller dot (no grid to avoid double-grid)
       ctx.save();
       ctx.translate(lx, ly);
       ctx.scale(zoom, zoom);
@@ -624,18 +634,24 @@
       const gridLeft = baseLeft + view.x;
       const gridTop = baseTop + view.y;
 
-      const { minor, major } = lineWidths(mm2px);
-      const gridW = mmW * mm2px;
-      const gridH = (mmH + extraTop) * mm2px;
-
-      drawGrid({ mmW, mmH, scale: mm2px, gridW, gridH, gridLeft, gridTop, minorLW: minor, majorLW: major, extraTop });
+      // Draw only the SVG overlay (no grid)
       drawSvgOverlay({ mmW, mmH, scale: mm2px, gridLeft, gridTop, extraTop });
 
-      // Draw the dot again inside the lens (suppress lens to avoid recursion)
-      drawDot({ scale: mm2px, gridLeft, gridTop, extraTop, width, height, suppressLens: true });
+      // Draw the dot again inside the lens (smaller), suppress lens recursion
+      drawDot({
+        scale: mm2px,
+        gridLeft,
+        gridTop,
+        extraTop,
+        width,
+        height,
+        suppressLens: true,
+        insideLens: true,
+        lensZoom: zoom
+      });
 
-      ctx.restore();
-      ctx.restore();
+      ctx.restore(); // end content inside lens
+      ctx.restore(); // end lens clip
 
       // Lens ring
       ctx.save();
