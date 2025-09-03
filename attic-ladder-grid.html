@@ -1377,12 +1377,24 @@
     [xInput, yInput].forEach(enableSelectAllOnFocus);
 
     // Reset button: clear inputs and reset zoom/pan (same as before)
-    clearBtn.addEventListener('click', () => {
-      xInput.value = '';
-      yInput.value = '';
-      saveXY();
-      resetView();
-    });
+clearBtn.addEventListener('click', () => {
+  // Clear XY
+  xInput.value = '';
+  yInput.value = '';
+  saveXY();
+
+  // Reset toggles
+  crosshairToggle.checked = false;
+  lockXToggle.checked = false;
+  lockYToggle.checked = false;
+  saveCrosshairSetting();
+  saveLockSettings();
+  applyLockUI();
+
+  // Reset view and close
+  resetView();
+  closeSettings();
+});
 
     // Desktop zoom + reset
     canvas.addEventListener('wheel', wheelZoomHandler, { passive: false });
