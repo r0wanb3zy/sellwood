@@ -231,17 +231,17 @@
         <div style="display:flex; flex-direction:column; gap:12px;">
           <label class="checkbox" for="crosshairToggle">
             <input id="crosshairToggle" type="checkbox" />
-            Show red crosshair through the dot
+            Show Crosshair
           </label>
 
-          <label class="checkbox" for="lockXToggle" title="Lock the current X value. Dragging or typing will not change X while locked.">
+          <label class="checkbox" for="lockXToggle" title="Prevent touch/drag from changing X. You can still type a new X value above.">
             <input id="lockXToggle" type="checkbox" />
-            Lock X position
+            Lock X ➡️
           </label>
 
-          <label class="checkbox" for="lockYToggle" title="Lock the current Y value. Dragging or typing will not change Y while locked.">
+          <label class="checkbox" for="lockYToggle" title="Prevent touch/drag from changing Y. You can still type a new Y value above.">
             <input id="lockYToggle" type="checkbox" />
-            Lock Y position
+            Lock Y ⬇️
           </label>
         </div>
       </div>
@@ -266,8 +266,8 @@
     const MAJOR_MM_THICK = 0.5;
 
     // Crosshair thickness
-    const CROSSHAIR_LW_MAIN = 2; // px in main view
-    const CROSSHAIR_LW_LENS = 1; // px inside magnifier (thinner as requested)
+    const CROSSHAIR_LW_MAIN = 1.5; // px in main view
+    const CROSSHAIR_LW_LENS = 1; // px inside magnifier (thinner)
 
     // Labeling config
     const LABEL_MIN_SPACING_PX = 48;
@@ -1013,11 +1013,9 @@
     function applyLockUI() {
       const lockX = isLockXEnabled();
       const lockY = isLockYEnabled();
-      xInput.readOnly = lockX;
-      yInput.readOnly = lockY;
-      // Optional: add visual hint
-      xInput.title = lockX ? 'X is locked' : '';
-      yInput.title = lockY ? 'Y is locked' : '';
+      // Inputs remain editable as requested; just update titles for clarity
+      xInput.title = lockX ? 'X locked from touch/drag; input still editable' : '';
+      yInput.title = lockY ? 'Y locked from touch/drag; input still editable' : '';
     }
 
     function setModel(key) {
@@ -1170,7 +1168,7 @@
       xmm = Math.round(clamp(xmm, 0, geom.mmW));
       ymm = Math.round(clamp(ymm, 0, geom.mmH));
 
-      // Apply locking
+      // Apply locking: prevent canvas/touch from changing locked axes
       if (!isLockXEnabled()) xInput.value = String(xmm);
       if (!isLockYEnabled()) yInput.value = String(ymm);
 
@@ -1364,6 +1362,7 @@
       visualViewport.addEventListener('scroll', scheduleResize, { passive: true });
     }
 
+    // Inputs remain editable even when locked
     xInput.addEventListener('input', () => { saveXY(); draw(); });
     yInput.addEventListener('input', () => { saveXY(); draw(); });
     [xInput, yInput].forEach(el =>
