@@ -578,7 +578,7 @@
       const rCssBase = 4;
       let rCss = rCssBase * cssScale;
 
-      // Inside lens: make the dot smaller and cancel the lens zoom so its size is independent of LENS_ZOOM
+      // Inside lens: make the dot smaller and cancel the lens zoom
       if (insideLens) {
         rCss = rCssBase * cssScale * (LENS_DOT_SCALE / Math.max(1e-6, lensZoom));
       }
@@ -619,11 +619,11 @@
       ctx.arc(lx, ly, R, 0, Math.PI * 2);
       ctx.clip();
 
-      // Fill lens background white to hide the original grid behind the bubble
+      // Fill lens background white to hide the outside/base grid
       ctx.fillStyle = '#fff';
       ctx.fillRect(lx - R - 2, ly - R - 2, (R + 2) * 2, (R + 2) * 2);
 
-      // Re-render content in the lens: ONLY overlay + smaller dot (no grid to avoid double-grid)
+      // Re-render content in the lens: grid + overlay + smaller dot
       ctx.save();
       ctx.translate(lx, ly);
       ctx.scale(zoom, zoom);
@@ -634,7 +634,14 @@
       const gridLeft = baseLeft + view.x;
       const gridTop = baseTop + view.y;
 
-      // Draw only the SVG overlay (no grid)
+      const { minor, major } = lineWidths(mm2px);
+      const gridW = mmW * mm2px;
+      const gridH = (mmH + extraTop) * mm2px;
+
+      // Draw the zoomed-in grid inside the lens
+      drawGrid({ mmW, mmH, scale: mm2px, gridW, gridH, gridLeft, gridTop, minorLW: minor, majorLW: major, extraTop });
+
+      // SVG overlay
       drawSvgOverlay({ mmW, mmH, scale: mm2px, gridLeft, gridTop, extraTop });
 
       // Draw the dot again inside the lens (smaller), suppress lens recursion
@@ -674,7 +681,7 @@
       ctx.font = `600 ${Math.round(12 * cssScale)}px system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Helvetica, Arial`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'bottom';
-      const ty = ly - R - 8 * cssScale; // above the bubble
+      const ty = ly - R - 8 * cssScale;
       const haloWidth = 3 * cssScale;
       ctx.lineWidth = haloWidth;
       ctx.strokeStyle = labelHalo;
@@ -1106,12 +1113,12 @@
       e.preventDefault();
 
       cancelPlaceTimer();
-      placing.active = false;
+      placing.active = false; // close magnifier on lift
 
       if (pointers.size === 0) {
         pan.active = false;
         pinch.active = false;
-        if (clampViewAtMin()) draw();
+        clampViewAtMin();
       } else if (pointers.size === 1) {
         const p = [...pointers.values()][0];
         pan.active = canPan();
@@ -1121,6 +1128,9 @@
       } else if (pointers.size >= 2) {
         startPinchBaseline();
       }
+
+      // Ensure the lens is removed immediately
+      draw();
     }
 
     // Init
