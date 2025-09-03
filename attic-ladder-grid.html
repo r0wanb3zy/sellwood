@@ -191,8 +191,13 @@
     const MAJOR_MM_THICK = 0.5;
 
     // Labeling config
-    const LABEL_MIN_SPACING_PX = 48; // try to keep ~48px between labels
+    const LABEL_MIN_SPACING_PX = 48; // try to keep ~48px between major labels
     const LABEL_FONT_PX = 12;        // comfortable, crisp on phones/tablets/desktop
+
+    // Minor label gating: only show 50mm labels when there's room
+    const MINOR_LABEL_MIN_SPACING_PX = 36; // min px between 50mm labels
+    const MINOR_LABEL_ALPHA = 0.75;        // lighter than majors
+    const MINOR_HALO_ALPHA = 0.9;          // halo a bit lighter too
 
     // Each model now carries its own mm width/height
     const MODELS = {
@@ -495,7 +500,7 @@
         const x = crispCoord(gridLeft + xm * scale, ctx.lineWidth);
         ctx.beginPath();
         ctx.moveTo(x, gridTop);
-        ctx.lineTo(x, gridTop + gridH);
+      ctx.lineTo(x, gridTop + gridH);
         ctx.stroke();
       }
       for (let ym = Math.ceil(yMin / MAJOR_MM) * MAJOR_MM; ym <= yMax; ym += MAJOR_MM) {
@@ -514,9 +519,12 @@
       const labelColor = getComputedStyle(document.documentElement).getPropertyValue('--label-color').trim() || '#111';
       const labelHalo  = getComputedStyle(document.documentElement).getPropertyValue('--label-halo').trim()  || 'rgba(255,255,255,0.92)';
 
-      // Choose label step to maintain a minimum pixel spacing
+      // Choose major label step to maintain a minimum pixel spacing
       const stepFactor = Math.max(1, Math.ceil(LABEL_MIN_SPACING_PX / (MAJOR_MM * scale)));
       const step = MAJOR_MM * stepFactor;
+
+      // Decide when to draw minor labels (50mm)
+      const showMinorLabels = (stepFactor === 1) && (MINOR_MM * scale >= MINOR_LABEL_MIN_SPACING_PX);
 
       const fontPx = LABEL_FONT_PX;
       const haloWidth = 3; // CSS px halo for contrast
@@ -532,36 +540,58 @@
       const yMinMmVisible = Math.max(0, (0 - gridTop) / scale - extraTop);
       const yMaxMmVisible = Math.min(mmH, (height - gridTop) / scale - extraTop);
 
-// Bottom X labels (anchored to the grid bottom; auto-shift up to stay visible)
-if (xMaxMmVisible >= 0 && xMinMmVisible <= mmW) {
-  ctx.save();
-  ctx.font = `600 ${fontPx}px system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Helvetica, Arial`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  ctx.lineJoin = 'round';
-  ctx.miterLimit = 2;
+      // Bottom X labels (anchored to the grid bottom; auto-shift up to stay visible)
+      if (xMaxMmVisible >= 0 && xMinMmVisible <= mmW) {
+        ctx.save();
+        ctx.font = `600 ${fontPx}px system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Helvetica, Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.lineJoin = 'round';
+        ctx.miterLimit = 2;
 
-  // Position: just below the grid bottom
-  const gridBottom = gridTop + (extraTop + mmH) * scale;
-  const desiredTop = gridBottom + outsideGap;
+        // Position: just below the grid bottom
+        const gridBottom = gridTop + (extraTop + mmH) * scale;
+        const desiredTop = gridBottom + outsideGap;
 
-  // Keep on-screen if the grid bottom is below the canvas bottom
-  const haloPad = Math.ceil(haloWidth / 2) + 1;
-  const maxTop = height - margin - fontPx - haloPad;
-  const yTop = alignToDevicePixel(Math.min(desiredTop, maxTop));
+        // Keep on-screen if the grid bottom is below the canvas bottom
+        const haloPad = Math.ceil(haloWidth / 2) + 1;
+        const maxTop = height - margin - fontPx - haloPad;
+        const yTop = alignToDevicePixel(Math.min(desiredTop, maxTop));
 
-  const startX = Math.ceil(xMinMmVisible / step) * step;
-  for (let xm = startX; xm <= xMaxMmVisible; xm += step) {
-    const sx = alignToDevicePixel(gridLeft + xm * scale);
-    const text = String(xm);
-    ctx.lineWidth = haloWidth;
-    ctx.strokeStyle = labelHalo;
-    ctx.strokeText(text, sx, yTop);
-    ctx.fillStyle = labelColor;
-    ctx.fillText(text, sx, yTop);
-  }
-  ctx.restore();
-}
+        // Major labels (dynamic step)
+        const startXMajor = Math.ceil(xMinMmVisible / step) * step;
+        for (let xm = startXMajor; xm <= xMaxMmVisible; xm += step) {
+          const sx = alignToDevicePixel(gridLeft + xm * scale);
+          const text = String(xm);
+          ctx.lineWidth = haloWidth;
+          ctx.strokeStyle = labelHalo;
+          ctx.globalAlpha = 1;
+          ctx.strokeText(text, sx, yTop);
+          ctx.fillStyle = labelColor;
+          ctx.fillText(text, sx, yTop);
+        }
+
+        // Minor labels (50mm) when zoomed enough; skip where a major label exists
+        if (showMinorLabels) {
+          const startXMinor = Math.ceil(xMinMmVisible / MINOR_MM) * MINOR_MM;
+          for (let xm = startXMinor; xm <= xMaxMmVisible; xm += MINOR_MM) {
+            if (xm % MAJOR_MM === 0) continue; // don't draw on top of majors
+            const sx = alignToDevicePixel(gridLeft + xm * scale);
+            const text = String(xm);
+            // Slightly lighter than major labels
+            ctx.lineWidth = haloWidth;
+            ctx.strokeStyle = labelHalo;
+            ctx.globalAlpha = MINOR_HALO_ALPHA;
+            ctx.strokeText(text, sx, yTop);
+            ctx.fillStyle = labelColor;
+            ctx.globalAlpha = MINOR_LABEL_ALPHA;
+            ctx.fillText(text, sx, yTop);
+            ctx.globalAlpha = 1;
+          }
+        }
+
+        ctx.restore();
+      }
 
       // Left Y labels (outside the grid's left edge; auto-shift to keep fully visible)
       if (yMaxMmVisible >= 0 && yMinMmVisible <= mmH) {
@@ -572,16 +602,16 @@ if (xMaxMmVisible >= 0 && xMinMmVisible <= mmW) {
         ctx.lineJoin = 'round';
         ctx.miterLimit = 2;
 
-        // Prepare list of visible labels to measure max width
-        const labels = [];
-        const startY = Math.ceil(yMinMmVisible / step) * step;
-        for (let ym = startY; ym <= yMaxMmVisible; ym += step) {
-          labels.push(String(ym));
+        // Prepare list of visible major labels to measure max width
+        const labelsMajor = [];
+        const startYMajor = Math.ceil(yMinMmVisible / step) * step;
+        for (let ym = startYMajor; ym <= yMaxMmVisible; ym += step) {
+          labelsMajor.push(String(ym));
         }
 
-        // Measure widest visible label to avoid left-edge clipping
+        // Measure widest visible label (majors cover the widest values anyway)
         let maxW = 0;
-        for (const txt of labels) {
+        for (const txt of labelsMajor) {
           const w = ctx.measureText(txt).width;
           if (w > maxW) maxW = w;
         }
@@ -595,17 +625,37 @@ if (xMaxMmVisible >= 0 && xMinMmVisible <= mmW) {
 
         const xRight = alignToDevicePixel(Math.max(desiredRightX, minRightX));
 
-        // Draw labels
-        for (let i = 0; i < labels.length; i++) {
-          const ym = startY + i * step;
+        // Draw major Y labels
+        for (let i = 0; i < labelsMajor.length; i++) {
+          const ym = startYMajor + i * step;
           const sy = alignToDevicePixel(gridTop + (extraTop + ym) * scale);
-          const text = labels[i];
+          const text = labelsMajor[i];
           ctx.lineWidth = haloWidth;
           ctx.strokeStyle = labelHalo;
+          ctx.globalAlpha = 1;
           ctx.strokeText(text, xRight, sy);
           ctx.fillStyle = labelColor;
           ctx.fillText(text, xRight, sy);
         }
+
+        // Draw minor Y labels (50mm) if allowed
+        if (showMinorLabels) {
+          const startYMinor = Math.ceil(yMinMmVisible / MINOR_MM) * MINOR_MM;
+          for (let ym = startYMinor; ym <= yMaxMmVisible; ym += MINOR_MM) {
+            if (ym % MAJOR_MM === 0) continue; // skip where majors exist
+            const sy = alignToDevicePixel(gridTop + (extraTop + ym) * scale);
+            const text = String(ym);
+            ctx.lineWidth = haloWidth;
+            ctx.strokeStyle = labelHalo;
+            ctx.globalAlpha = MINOR_HALO_ALPHA;
+            ctx.strokeText(text, xRight, sy);
+            ctx.fillStyle = labelColor;
+            ctx.globalAlpha = MINOR_LABEL_ALPHA;
+            ctx.fillText(text, xRight, sy);
+            ctx.globalAlpha = 1;
+          }
+        }
+
         ctx.restore();
       }
     }
