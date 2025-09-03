@@ -228,10 +228,22 @@
         <button id="settingsClose" class="icon-btn" title="Close" aria-label="Close">✕</button>
       </div>
       <div class="modal-body">
-        <label class="checkbox" for="crosshairToggle">
-          <input id="crosshairToggle" type="checkbox" />
-          Show red crosshair through the dot
-        </label>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <label class="checkbox" for="crosshairToggle">
+            <input id="crosshairToggle" type="checkbox" />
+            Show red crosshair through the dot
+          </label>
+
+          <label class="checkbox" for="lockXToggle" title="Lock the current X value. Dragging or typing will not change X while locked.">
+            <input id="lockXToggle" type="checkbox" />
+            Lock X position
+          </label>
+
+          <label class="checkbox" for="lockYToggle" title="Lock the current Y value. Dragging or typing will not change Y while locked.">
+            <input id="lockYToggle" type="checkbox" />
+            Lock Y position
+          </label>
+        </div>
       </div>
       <div class="modal-footer">
         <!-- Reset button inside modal (same behavior as before) -->
@@ -252,6 +264,10 @@
 
     const MINOR_MM_THICK = 0.25;
     const MAJOR_MM_THICK = 0.5;
+
+    // Crosshair thickness
+    const CROSSHAIR_LW_MAIN = 2; // px in main view
+    const CROSSHAIR_LW_LENS = 1; // px inside magnifier (thinner as requested)
 
     // Labeling config
     const LABEL_MIN_SPACING_PX = 48;
@@ -307,6 +323,8 @@
     const settingsModal = document.getElementById('settingsModal');
     const settingsClose = document.getElementById('settingsClose');
     const crosshairToggle = document.getElementById('crosshairToggle');
+    const lockXToggle = document.getElementById('lockXToggle');
+    const lockYToggle = document.getElementById('lockYToggle');
 
     // Reset button now lives in the modal
     const clearBtn = document.getElementById('clearBtn');
@@ -315,6 +333,8 @@
     const STORAGE_KEY_XY = 'grid-plotter-xy';
     const STORAGE_KEY_MODEL = 'grid-plotter-model';
     const STORAGE_KEY_CROSSHAIR = 'grid-plotter-crosshair';
+    const STORAGE_KEY_LOCKX = 'grid-plotter-lock-x';
+    const STORAGE_KEY_LOCKY = 'grid-plotter-lock-y';
 
     const DEFAULT_X = 0;
     const DEFAULT_Y = 0;
@@ -419,12 +439,13 @@
       return { minor: minorCss, major: majorCss };
     }
 
-    function crispCoord(v, lineWidthCss) {
-      const lwDev = lineWidthCss * dpr;
+    // Enhanced to consider current transform scale (e.g., lens zoom)
+    function crispCoord(v, lineWidthCss, transformScale = 1) {
+      const lwDev = lineWidthCss * dpr * transformScale;
       const isInt = Math.abs(lwDev - Math.round(lwDev)) < 1e-6;
       const isOddDevicePx = isInt && (Math.round(lwDev) % 2 === 1);
       const centerOffsetDev = isOddDevicePx ? 0.5 : 0;
-      return (Math.round(v * dpr) + centerOffsetDev) / dpr;
+      return (Math.round(v * dpr * transformScale) + centerOffsetDev) / (dpr * transformScale);
     }
 
     function alignToDevicePixel(v) {
@@ -452,7 +473,7 @@
       drawSvgOverlay({ mmW, mmH, scale: mm2px, gridLeft, gridTop, extraTop });
 
       // Crosshair (if enabled)
-      drawCrosshair({ mmW, mmH, scale: mm2px, gridLeft, gridTop, gridW, gridH, extraTop });
+      drawCrosshair({ mmW, mmH, scale: mm2px, gridLeft, gridTop, gridW, gridH, extraTop, lensZoom: 1 });
 
       // Axis labels
       drawAxisLabelsPinned({ mmW, mmH, scale: mm2px, gridLeft, gridTop, extraTop, width, height });
@@ -688,8 +709,8 @@
       }
     }
 
-    // Crosshair drawer (spans full grid)
-    function drawCrosshair({ mmW, mmH, scale, gridLeft, gridTop, gridW, gridH, extraTop }) {
+    // Crosshair drawer; supports lensZoom to keep thickness independent of lens scale
+    function drawCrosshair({ mmW, mmH, scale, gridLeft, gridTop, gridW, gridH, extraTop, lensZoom = 1 }) {
       if (!isCrosshairEnabled()) return;
 
       const xParsed = parseFloat(xInput.value);
@@ -702,6 +723,10 @@
       const px = gridLeft + xmm * scale;
       const py = gridTop + (extraTop + ymm) * scale;
 
+      // Desired on-screen thickness (CSS px), independent of lens zoom
+      const desiredCss = (lensZoom === 1) ? CROSSHAIR_LW_MAIN : CROSSHAIR_LW_LENS;
+      const effectiveLineWidth = desiredCss / lensZoom;
+
       ctx.save();
 
       // Clip to grid rect
@@ -711,11 +736,11 @@
       ctx.clip();
 
       ctx.strokeStyle = accent;
-      ctx.lineWidth = 2; // constant width in CSS px
+      ctx.lineWidth = effectiveLineWidth;
 
-      // Align to device pixels to keep lines sharp
-      const cx = crispCoord(px, ctx.lineWidth);
-      const cy = crispCoord(py, ctx.lineWidth);
+      // Pixel-crisp alignment considering lens zoom
+      const cx = crispCoord(px, ctx.lineWidth, lensZoom);
+      const cy = crispCoord(py, ctx.lineWidth, lensZoom);
 
       // Horizontal line (full width of grid)
       ctx.beginPath();
@@ -749,7 +774,7 @@
       ctx.fillStyle = '#fff';
       ctx.fillRect(lx - R - 2, ly - R - 2, (R + 2) * 2, (R + 2) * 2);
 
-      // Re-render content in the lens: grid + overlay + crosshair + smaller dot
+      // Re-render content in the lens: grid + overlay + thinner crosshair + smaller dot
       ctx.save();
       ctx.translate(lx, ly);
       ctx.scale(zoom, zoom);
@@ -770,8 +795,8 @@
       // SVG overlay
       drawSvgOverlay({ mmW, mmH, scale: mm2px, gridLeft, gridTop, extraTop });
 
-      // Crosshair inside lens
-      drawCrosshair({ mmW, mmH, scale: mm2px, gridLeft, gridTop, gridW, gridH, extraTop });
+      // Crosshair inside lens (thinner)
+      drawCrosshair({ mmW, mmH, scale: mm2px, gridLeft, gridTop, gridW, gridH, extraTop, lensZoom: zoom });
 
       // Draw the dot again inside the lens (smaller), suppress lens recursion
       drawDot({
@@ -968,6 +993,33 @@
       return !!(crosshairToggle && crosshairToggle.checked);
     }
 
+    function saveLockSettings() {
+      try {
+        localStorage.setItem(STORAGE_KEY_LOCKX, lockXToggle.checked ? '1' : '0');
+        localStorage.setItem(STORAGE_KEY_LOCKY, lockYToggle.checked ? '1' : '0');
+      } catch (e) {}
+    }
+    function restoreLockSettings() {
+      try {
+        const lx = localStorage.getItem(STORAGE_KEY_LOCKX);
+        const ly = localStorage.getItem(STORAGE_KEY_LOCKY);
+        if (lx === '1') lockXToggle.checked = true;
+        if (ly === '1') lockYToggle.checked = true;
+      } catch (e) {}
+      applyLockUI();
+    }
+    function isLockXEnabled() { return !!(lockXToggle && lockXToggle.checked); }
+    function isLockYEnabled() { return !!(lockYToggle && lockYToggle.checked); }
+    function applyLockUI() {
+      const lockX = isLockXEnabled();
+      const lockY = isLockYEnabled();
+      xInput.readOnly = lockX;
+      yInput.readOnly = lockY;
+      // Optional: add visual hint
+      xInput.title = lockX ? 'X is locked' : '';
+      yInput.title = lockY ? 'Y is locked' : '';
+    }
+
     function setModel(key) {
       selectedModel = (key && MODELS[key]) ? key : DEFAULT_MODEL;
 
@@ -1118,8 +1170,10 @@
       xmm = Math.round(clamp(xmm, 0, geom.mmW));
       ymm = Math.round(clamp(ymm, 0, geom.mmH));
 
-      xInput.value = String(xmm);
-      yInput.value = String(ymm);
+      // Apply locking
+      if (!isLockXEnabled()) xInput.value = String(xmm);
+      if (!isLockYEnabled()) yInput.value = String(ymm);
+
       saveXY();
       draw();
     }
@@ -1295,6 +1349,7 @@
     resizeCanvas();
     restoreModel();
     restoreCrosshairSetting();
+    restoreLockSettings();
 
     window.addEventListener('resize', scheduleResize);
     window.addEventListener('orientationchange', scheduleResize);
@@ -1367,6 +1422,15 @@
     crosshairToggle.addEventListener('change', () => {
       saveCrosshairSetting();
       draw();
+    });
+
+    lockXToggle.addEventListener('change', () => {
+      applyLockUI();
+      saveLockSettings();
+    });
+    lockYToggle.addEventListener('change', () => {
+      applyLockUI();
+      saveLockSettings();
     });
 
     document.addEventListener('keydown', (e) => {
