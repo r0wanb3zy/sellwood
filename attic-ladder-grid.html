@@ -49,8 +49,8 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 14px;
-      padding: 10px;
+      gap: 8px;
+      padding: 8px;
       background: var(--ui-bg);
       border-bottom: 1px solid var(--ui-border);
       flex-wrap: wrap;
@@ -136,6 +136,9 @@
 
       /* IMPORTANT: custom gestures (pinch/pan) handled in JS for consistency with desktop */
       touch-action: none;
+
+      /* NEW: crosshair cursor for easier targeting */
+      cursor: crosshair;
     }
   </style>
 </head>
@@ -896,6 +899,52 @@
       startDist: 0
     };
 
+    // NEW: plot/long-press state (click/tap to place, or long-press to drag)
+    const PLOT_HOLD_MS = 200;
+    const PLOT_MOVE_TOL = 6; // px
+    const plot = {
+      active: false,
+      pointerId: null,
+      holdTimer: 0,
+      startX: 0,
+      startY: 0,
+      lastX: 0,
+      lastY: 0,
+      triggered: false
+    };
+
+    function clearPlotHold() {
+      if (plot.holdTimer) {
+        clearTimeout(plot.holdTimer);
+        plot.holdTimer = 0;
+      }
+    }
+
+    function beginPlotHold(pointerId, x, y) {
+      clearPlotHold();
+      plot.pointerId = pointerId;
+      plot.startX = x;
+      plot.startY = y;
+      plot.lastX = x;
+      plot.lastY = y;
+      plot.triggered = false;
+      plot.holdTimer = setTimeout(() => {
+        const cur = pointers.get(plot.pointerId);
+        if (!cur) return;
+        const dist = Math.hypot(cur.x - plot.startX, cur.y - plot.startY);
+        if (dist <= PLOT_MOVE_TOL) {
+          // Only start placing if inside the grid
+          const { inside } = pickMmAtCanvasPoint(cur.x, cur.y);
+          if (inside) {
+            plot.active = true;
+            plot.triggered = true;
+            pan.active = false; // disable panning while placing
+            placeDotAtCanvasPoint(cur.x, cur.y, { round: true, onlyIfInside: true });
+          }
+        }
+      }, PLOT_HOLD_MS);
+    }
+
     function getCanvasPoint(e) {
       const rect = canvas.getBoundingClientRect();
       return { x: e.clientX - rect.left, y: e.clientY - rect.top };
@@ -903,6 +952,14 @@
 
     function updatePointer(e) {
       pointers.set(e.pointerId, getCanvasPoint(e));
+      // Track last known position for tap distance checks
+      if (plot.pointerId === e.pointerId) {
+        const p = pointers.get(e.pointerId);
+        if (p) {
+          plot.lastX = p.x;
+          plot.lastY = p.y;
+        }
+      }
     }
 
     function startPinchBaseline() {
@@ -954,22 +1011,70 @@
       draw();
     }
 
+    // NEW: helpers to convert canvas coords -> mm and place the dot
+    function pickMmAtCanvasPoint(px, py) {
+      const { scale: baseScale, gridLeft: baseLeft, gridTop: baseTop, extraTop, mmW, mmH } = computeLayout();
+      const mm2px = baseScale * view.scale;
+      const gridLeft = baseLeft + view.x;
+      const gridTop = baseTop + view.y;
+      const gridWpx = mmW * mm2px;
+      const gridHpx = (mmH + extraTop) * mm2px;
+
+      const inside = px >= gridLeft && px <= gridLeft + gridWpx && py >= gridTop && py <= gridTop + gridHpx;
+
+      let xmm = (px - gridLeft) / mm2px;
+      let ymm = (py - gridTop) / mm2px - extraTop;
+      xmm = clamp(xmm, 0, mmW);
+      ymm = clamp(ymm, 0, mmH);
+
+      return { xmm, ymm, inside };
+    }
+
+    function placeDotAtCanvasPoint(px, py, { round = true, onlyIfInside = true } = {}) {
+      const { xmm, ymm, inside } = pickMmAtCanvasPoint(px, py);
+      if (onlyIfInside && !inside) return false;
+
+      const xi = round ? Math.round(xmm) : xmm;
+      const yi = round ? Math.round(ymm) : ymm;
+
+      if (Number.isFinite(xi) && Number.isFinite(yi)) {
+        xInput.value = xi;
+        yInput.value = yi;
+        saveXY();
+        draw();
+        return true;
+      }
+      return false;
+    }
+
     function onPointerDown(e) {
+      // Only act on primary button/touch
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+
       canvas.setPointerCapture?.(e.pointerId);
       updatePointer(e);
       e.preventDefault();
 
       if (pointers.size === 1) {
-        const p = [...pointers.values()][0];
+        const p = pointers.get(e.pointerId);
+        if (p) {
+          beginPlotHold(e.pointerId, p.x, p.y); // NEW: prepare long-press placing
+        }
+
         if (canPan()) {
           pan.active = true;
-          pan.lastX = p.x;
-          pan.lastY = p.y;
+          if (p) {
+            pan.lastX = p.x;
+            pan.lastY = p.y;
+          }
         } else {
           pan.active = false; // locked at min zoom
         }
         pinch.active = false;
       } else if (pointers.size === 2) {
+        // entering pinch cancels plot hold/placing
+        clearPlotHold();
+        plot.active = false;
         pan.active = false;
         startPinchBaseline();
       }
@@ -980,23 +1085,62 @@
       updatePointer(e);
       e.preventDefault();
 
-      if (pointers.size === 1 && pan.active) {
-        const p = [...pointers.values()][0];
-        const dx = p.x - pan.lastX;
-        const dy = p.y - pan.lastY;
-        pan.lastX = p.x;
-        pan.lastY = p.y;
-        view.x += dx;
-        view.y += dy;
-        draw();
+      if (pointers.size === 1) {
+        const p = pointers.get(e.pointerId);
+
+        // Cancel long-press if moved too much before it fires
+        if (!plot.active && plot.holdTimer) {
+          const dist = Math.hypot(p.x - plot.startX, p.y - plot.startY);
+          if (dist > PLOT_MOVE_TOL) {
+            clearPlotHold();
+          }
+        }
+
+        // If we are in placing mode, continuously update the dot
+        if (plot.active && plot.pointerId === e.pointerId) {
+          placeDotAtCanvasPoint(p.x, p.y, { round: true, onlyIfInside: true });
+          return; // do not pan while placing
+        }
+
+        // Otherwise, pan if allowed and active
+        if (pan.active) {
+          const dx = p.x - pan.lastX;
+          const dy = p.y - pan.lastY;
+          pan.lastX = p.x;
+          pan.lastY = p.y;
+          view.x += dx;
+          view.y += dy;
+          draw();
+        }
       } else if (pointers.size >= 2) {
+        // Multi-touch: cancel placing and long-press, handle pinch
+        clearPlotHold();
+        plot.active = false;
         handlePinch();
       }
     }
 
     function onPointerUp(e) {
+      // For tap placement, grab the last position before we remove it
+      const p = pointers.get(e.pointerId) || getCanvasPoint(e);
+
       if (pointers.has(e.pointerId)) pointers.delete(e.pointerId);
       e.preventDefault();
+
+      // End placing mode if it was active
+      if (plot.active && plot.pointerId === e.pointerId) {
+        plot.active = false;
+      }
+
+      // If long-press never triggered and we didn't really move, treat as a click/tap to place
+      if (!pinch.active && !plot.active && plot.pointerId === e.pointerId && plot.holdTimer) {
+        const dist = Math.hypot((p.x ?? plot.lastX) - plot.startX, (p.y ?? plot.lastY) - plot.startY);
+        if (dist <= PLOT_MOVE_TOL) {
+          placeDotAtCanvasPoint(p.x, p.y, { round: true, onlyIfInside: true });
+        }
+      }
+
+      clearPlotHold();
 
       if (pointers.size === 0) {
         pan.active = false;
@@ -1005,10 +1149,10 @@
         if (clampViewAtMin()) draw();
       } else if (pointers.size === 1) {
         // Continue panning with remaining finger only if zoomed-in
-        const p = [...pointers.values()][0];
+        const pLeft = [...pointers.values()][0];
         pan.active = canPan();
-        pan.lastX = p.x;
-        pan.lastY = p.y;
+        pan.lastX = pLeft.x;
+        pan.lastY = pLeft.y;
         pinch.active = false;
       } else if (pointers.size >= 2) {
         // Rebaseline if pointer count changes
@@ -1065,6 +1209,9 @@
     canvas.addEventListener('pointerup', onPointerUp, { passive: false });
     canvas.addEventListener('pointercancel', onPointerUp, { passive: false });
     canvas.addEventListener('lostpointercapture', onPointerUp, { passive: false });
+
+    // NEW: prevent long-press context menu on mobile
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
     // NEW: Click/tap anywhere to blur inputs unless clicking an interactive element
     const blurIfOutsideInputs = (e) => {
