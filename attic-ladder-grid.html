@@ -469,7 +469,8 @@
       const gridW = mmW * mm2px;
       const gridH = (mmH + extraTop) * mm2px;
 
-      drawGrid({ mmW, mmH, scale: mm2px, gridW, gridH, gridLeft, gridTop, minorLW: minor, majorLW: major, extraTop });
+      // Pass lensZoom: 1 for the main view
+      drawGrid({ mmW, mmH, scale: mm2px, gridW, gridH, gridLeft, gridTop, minorLW: minor, majorLW: major, extraTop, lensZoom: 1 });
       drawSvgOverlay({ mmW, mmH, scale: mm2px, gridLeft, gridTop, extraTop });
 
       // Crosshair (if enabled)
@@ -482,7 +483,8 @@
       drawDot({ scale: mm2px, gridLeft, gridTop, extraTop, width, height, suppressLens: false, insideLens: false, lensZoom: 1 });
     }
 
-    function drawGrid({ mmW, mmH, scale, gridW, gridH, gridLeft, gridTop, minorLW, majorLW, extraTop }) {
+    // UPDATED: stroke-aware, symmetric clip; lens-aware crisping
+    function drawGrid({ mmW, mmH, scale, gridW, gridH, gridLeft, gridTop, minorLW, majorLW, extraTop, lensZoom = 1 }) {
       const minorColor = getComputedStyle(document.documentElement).getPropertyValue('--minor').trim() || '#d9d9d9';
       const majorColor = getComputedStyle(document.documentElement).getPropertyValue('--major').trim() || '#7a7a7a';
 
@@ -490,9 +492,10 @@
       const yMax = mmH;
 
       ctx.save();
-      const clipPadding = 1 / dpr;
+      // Half the thickest stroke + a tiny epsilon (pre-transform units)
+      const pad = Math.max(minorLW, majorLW) / 2 + 1 / (dpr * lensZoom);
       ctx.beginPath();
-      ctx.rect(gridLeft, gridTop, gridW + clipPadding, gridH);
+      ctx.rect(gridLeft - pad, gridTop - pad, gridW + 2 * pad, gridH + 2 * pad);
       ctx.clip();
 
       // Minor lines
@@ -501,7 +504,7 @@
 
       for (let xm = MINOR_MM; xm < mmW; xm += MINOR_MM) {
         if (xm % MAJOR_MM === 0) continue;
-        const x = crispCoord(gridLeft + xm * scale, ctx.lineWidth);
+        const x = crispCoord(gridLeft + xm * scale, ctx.lineWidth, lensZoom);
         ctx.beginPath();
         ctx.moveTo(x, gridTop);
         ctx.lineTo(x, gridTop + gridH);
@@ -509,7 +512,7 @@
       }
       for (let ym = Math.ceil(yMin / MINOR_MM) * MINOR_MM; ym < yMax; ym += MINOR_MM) {
         if (ym % MAJOR_MM === 0) continue;
-        const y = crispCoord(gridTop + (ym + extraTop) * scale, ctx.lineWidth);
+        const y = crispCoord(gridTop + (ym + extraTop) * scale, ctx.lineWidth, lensZoom);
         ctx.beginPath();
         ctx.moveTo(gridLeft, y);
         ctx.lineTo(gridLeft + gridW, y);
@@ -521,14 +524,14 @@
       ctx.lineWidth = majorLW;
 
       for (let xm = 0; xm <= mmW; xm += MAJOR_MM) {
-        const x = crispCoord(gridLeft + xm * scale, ctx.lineWidth);
+        const x = crispCoord(gridLeft + xm * scale, ctx.lineWidth, lensZoom);
         ctx.beginPath();
         ctx.moveTo(x, gridTop);
         ctx.lineTo(x, gridTop + gridH);
         ctx.stroke();
       }
       for (let ym = Math.ceil(yMin / MAJOR_MM) * MAJOR_MM; ym <= yMax; ym += MAJOR_MM) {
-        const y = crispCoord(gridTop + (ym + extraTop) * scale, ctx.lineWidth);
+        const y = crispCoord(gridTop + (ym + extraTop) * scale, ctx.lineWidth, lensZoom);
         ctx.beginPath();
         ctx.moveTo(gridLeft, y);
         ctx.lineTo(gridLeft + gridW, y);
@@ -709,7 +712,7 @@
       }
     }
 
-    // Crosshair drawer; supports lensZoom to keep thickness independent of lens scale
+    // UPDATED: stroke-aware, symmetric clip; lens-aware crisping
     function drawCrosshair({ mmW, mmH, scale, gridLeft, gridTop, gridW, gridH, extraTop, lensZoom = 1 }) {
       if (!isCrosshairEnabled()) return;
 
@@ -723,32 +726,31 @@
       const px = gridLeft + xmm * scale;
       const py = gridTop + (extraTop + ymm) * scale;
 
-      // Desired on-screen thickness (CSS px), independent of lens zoom
+      // Keep apparent thickness constant in the lens
       const desiredCss = (lensZoom === 1) ? CROSSHAIR_LW_MAIN : CROSSHAIR_LW_LENS;
       const effectiveLineWidth = desiredCss / lensZoom;
 
       ctx.save();
-
-      // Clip to grid rect
-      const half = 0.5 / dpr;
-      ctx.beginPath();
-      ctx.rect(gridLeft - half, gridTop - half, gridW + 2 * half, gridH + 2 * half);
-      ctx.clip();
-
       ctx.strokeStyle = accent;
       ctx.lineWidth = effectiveLineWidth;
 
-      // Pixel-crisp alignment considering lens zoom
+      // Half the stroke + epsilon (pre-transform units)
+      const pad = ctx.lineWidth / 2 + 1 / (dpr * lensZoom);
+      ctx.beginPath();
+      ctx.rect(gridLeft - pad, gridTop - pad, gridW + 2 * pad, gridH + 2 * pad);
+      ctx.clip();
+
+      // Pixel-crisp alignment
       const cx = crispCoord(px, ctx.lineWidth, lensZoom);
       const cy = crispCoord(py, ctx.lineWidth, lensZoom);
 
-      // Horizontal line (full width of grid)
+      // Horizontal line
       ctx.beginPath();
       ctx.moveTo(gridLeft, cy);
       ctx.lineTo(gridLeft + gridW, cy);
       ctx.stroke();
 
-      // Vertical line (full height of grid)
+      // Vertical line
       ctx.beginPath();
       ctx.moveTo(cx, gridTop);
       ctx.lineTo(cx, gridTop + gridH);
@@ -789,8 +791,8 @@
       const gridW = mmW * mm2px;
       const gridH = (mmH + extraTop) * mm2px;
 
-      // Draw the zoomed-in grid inside the lens
-      drawGrid({ mmW, mmH, scale: mm2px, gridW, gridH, gridLeft, gridTop, minorLW: minor, majorLW: major, extraTop });
+      // Draw the zoomed-in grid inside the lens (lens-aware)
+      drawGrid({ mmW, mmH, scale: mm2px, gridW, gridH, gridLeft, gridTop, minorLW: minor, majorLW: major, extraTop, lensZoom: zoom });
 
       // SVG overlay
       drawSvgOverlay({ mmW, mmH, scale: mm2px, gridLeft, gridTop, extraTop });
@@ -1383,13 +1385,7 @@ clearBtn.addEventListener('click', () => {
   yInput.value = '';
   saveXY();
 
-  // Reset toggles
-  crosshairToggle.checked = false;
-  lockXToggle.checked = false;
-  lockYToggle.checked = false;
-  saveCrosshairSetting();
-  saveLockSettings();
-  applyLockUI();
+
 
   // Reset view and close
   resetView();
