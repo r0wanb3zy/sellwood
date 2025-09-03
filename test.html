@@ -22,7 +22,7 @@
     * { box-sizing: border-box; }
     html, body { height: 100%; margin: 0; }
 
-    /* Prevent pull-to-refresh / overscroll bounce where supported (Chrome Android, modern Safari) */
+    /* Prevent pull-to-refresh / overscroll bounce where supported */
     html, body, .stage {
       overscroll-behavior-y: none;
       overscroll-behavior-x: none;
@@ -68,8 +68,8 @@
       border-radius: 8px;
       background: #fff;
       color: #111;
-      -moz-appearance: textfield; /* Firefox */
-      -webkit-appearance: none;   /* Chrome/Safari */
+      -moz-appearance: textfield;
+      -webkit-appearance: none;
       appearance: none;
       text-align: center;
     }
@@ -129,7 +129,7 @@
       display: block;
       background: #fff;
 
-      /* Custom gestures handled in JS */
+      /* gestures handled in JS */
       touch-action: none;
     }
   </style>
@@ -173,7 +173,7 @@
 
 <script>
   (function () {
-    // Defaults used when no model is selected
+    // Defaults when no model is selected
     const DEFAULT_MM_W = 2100;
     const DEFAULT_MM_H = 3700;
 
@@ -185,20 +185,20 @@
     const MAJOR_MM_THICK = 0.5;
 
     // Labeling config
-    const LABEL_MIN_SPACING_PX = 48; // spacing between major labels
+    const LABEL_MIN_SPACING_PX = 48;
     const LABEL_FONT_PX = 12;
 
-    // Minor label gating
+    // 50mm label gating
     const MINOR_LABEL_MIN_SPACING_PX = 36;
     const MINOR_LABEL_ALPHA = 0.75;
     const MINOR_HALO_ALPHA = 0.9;
 
-    // Magnifier lens config (touch-only)
-    const LENS_OFFSET_PX = 72;         // distance from finger to lens center
-    const LENS_RADIUS_PX = 64;         // lens radius
-    const LENS_ZOOM = 2.5;             // magnification
-    const LENS_BORDER_PX = 2;          // ring width
-    const LENS_MIN_MARGIN_PX = 8;      // keep lens inside canvas
+    // Magnifier lens (touch-only)
+    const LENS_OFFSET_PX = 72;
+    const LENS_RADIUS_PX = 64;
+    const LENS_ZOOM = 2.5;
+    const LENS_BORDER_PX = 2;
+    const LENS_MIN_MARGIN_PX = 8;
 
     // Models
     const MODELS = {
@@ -243,7 +243,7 @@
 
     let selectedModel = DEFAULT_MODEL;
 
-    // Effective DPR includes pinch-zoom scale (page zoom)
+    // Effective DPR includes page pinch-zoom
     let dpr = 1;
     function getEffectiveDpr() {
       const base = Math.max(1, window.devicePixelRatio || 1);
@@ -372,10 +372,10 @@
       drawGrid({ mmW, mmH, scale: mm2px, gridW, gridH, gridLeft, gridTop, minorLW: minor, majorLW: major, extraTop });
       drawSvgOverlay({ mmW, mmH, scale: mm2px, gridLeft, gridTop, extraTop });
 
-      // Axis labels: X pinned to bottom, Y outside the grid's left edge
+      // Axis labels
       drawAxisLabelsPinned({ mmW, mmH, scale: mm2px, gridLeft, gridTop, extraTop, width, height });
 
-      drawDot({ scale: mm2px, gridLeft, gridTop, extraTop, width, height });
+      drawDot({ scale: mm2px, gridLeft, gridTop, extraTop, width, height, suppressLens: false });
     }
 
     function drawGrid({ mmW, mmH, scale, gridW, gridH, gridLeft, gridTop, minorLW, majorLW, extraTop }) {
@@ -521,8 +521,8 @@
         }
         const haloPad = Math.ceil(haloWidth / 2) + 1;
 
-        const desiredRightX = gridLeft - 6;
-        const minRightX = 6 + maxW + haloPad;
+        const desiredRightX = gridLeft - outsideGap;
+        const minRightX = margin + maxW + haloPad;
         const xRight = alignToDevicePixel(Math.max(desiredRightX, minRightX));
 
         for (let i = 0; i < labelsMajor.length; i++) {
@@ -557,7 +557,7 @@
       }
     }
 
-    function drawDot({ scale, gridLeft, gridTop, extraTop, width, height }) {
+    function drawDot({ scale, gridLeft, gridTop, extraTop, width, height, suppressLens = false }) {
       const xParsed = parseFloat(xInput.value);
       const yParsed = parseFloat(yInput.value);
       const xmm = Number.isFinite(xParsed) ? xParsed : DEFAULT_X;
@@ -570,6 +570,7 @@
       const labelHalo = getComputedStyle(document.documentElement).getPropertyValue('--label-halo').trim() || 'rgba(255,255,255,0.92)';
       const labelColor = getComputedStyle(document.documentElement).getPropertyValue('--label-color').trim() || '#111';
 
+      // Keep visuals constant-size regardless of page zoom
       const pageZoom = (window.visualViewport && window.visualViewport.scale) ? window.visualViewport.scale : 1;
       const cssScale = 1 / pageZoom;
 
@@ -587,8 +588,8 @@
       ctx.fill();
       ctx.restore();
 
-      // Touch-only magnifier while placing
-      if (placing.active && placing.isTouch) {
+      // Touch-only magnifier while placing (guarded to prevent recursion)
+      if (!suppressLens && placing.active && placing.isTouch) {
         drawMagnifier({
           centerX: cx, centerY: cy,
           width, height,
@@ -629,25 +630,21 @@
 
       drawGrid({ mmW, mmH, scale: mm2px, gridW, gridH, gridLeft, gridTop, minorLW: minor, majorLW: major, extraTop });
       drawSvgOverlay({ mmW, mmH, scale: mm2px, gridLeft, gridTop, extraTop });
-      // Draw the dot again inside the lens (no nested lens)
-      drawDot({ scale: mm2px, gridLeft, gridTop, extraTop, width, height });
+
+      // Draw the dot again inside the lens (suppress lens to avoid recursion)
+      drawDot({ scale: mm2px, gridLeft, gridTop, extraTop, width, height, suppressLens: true });
 
       ctx.restore();
       ctx.restore();
 
-      // Lens ring + shadow
+      // Lens ring
       ctx.save();
-      ctx.shadowColor = 'rgba(0,0,0,0.25)';
-      ctx.shadowBlur = 8 * cssScale;
-      ctx.shadowOffsetY = 2 * cssScale;
-
       ctx.beginPath();
       ctx.arc(lx, ly, R, 0, Math.PI * 2);
       ctx.strokeStyle = labelHalo;
       ctx.lineWidth = border * 2.5;
       ctx.stroke();
 
-      ctx.shadowColor = 'transparent';
       ctx.beginPath();
       ctx.arc(lx, ly, R, 0, Math.PI * 2);
       ctx.strokeStyle = '#222';
@@ -655,7 +652,7 @@
       ctx.stroke();
       ctx.restore();
 
-      // Coordinates label below the lens
+      // Coordinates below the lens
       const text = `${xmm}, ${ymm} mm`;
       ctx.save();
       ctx.font = `600 ${Math.round(12 * cssScale)}px system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Helvetica, Arial`;
@@ -831,7 +828,7 @@
       }
     }
 
-    // Wheel zoom: in to mouse, out toward default (no snap)
+    // Wheel zoom
     function wheelZoomHandler(e) {
       e.preventDefault();
 
@@ -894,15 +891,15 @@
     };
 
     // Long-press placement state
-    const LONG_PRESS_MS = 200;       // time to enter "place" mode
-    const DRAG_TOLERANCE_PX = 6;     // movement before canceling the long-press
+    const LONG_PRESS_MS = 200;
+    const DRAG_TOLERANCE_PX = 6;
     const placing = {
       active: false,
       timer: 0,
       startX: 0,
       startY: 0,
       pointerId: null,
-      isTouch: false  // controls magnifier visibility
+      isTouch: false // magnifier only when true
     };
 
     function getCanvasPoint(e) {
@@ -1113,7 +1110,7 @@
     // Init
     restoreXY();
     resizeCanvas();
-    restoreModel(); // may trigger draw again after SVG load
+    restoreModel();
 
     window.addEventListener('resize', scheduleResize);
     window.addEventListener('orientationchange', scheduleResize);
@@ -1141,7 +1138,7 @@
 
     [xInput, yInput].forEach(enableSelectAllOnFocus);
 
-    // Reset button
+    // Reset button: clear inputs and reset zoom/pan
     clearBtn.addEventListener('click', () => {
       xInput.value = '';
       yInput.value = '';
@@ -1149,7 +1146,7 @@
       resetView();
     });
 
-    // Desktop wheel zoom
+    // Desktop zoom + reset
     canvas.addEventListener('wheel', wheelZoomHandler, { passive: false });
     canvas.addEventListener('dblclick', resetView);
 
@@ -1176,7 +1173,6 @@
     document.addEventListener('mousedown', blurIfOutsideInputs, { capture: true, passive: true });
     document.addEventListener('touchstart', blurIfOutsideInputs, { capture: true, passive: true });
 
-    // Optional: press Esc to blur active input
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         const ae = document.activeElement;
