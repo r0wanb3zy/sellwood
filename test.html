@@ -132,6 +132,54 @@
       /* gestures handled in JS */
       touch-action: none;
     }
+
+    /* Settings modal */
+    .modal-backdrop[hidden] { display: none !important; }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+    .modal {
+      width: min(420px, 92vw);
+      background: #fff;
+      border: 1px solid var(--ui-border);
+      border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.18);
+      overflow: hidden;
+    }
+    .modal-header, .modal-footer {
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--ui-border);
+    }
+    .modal-footer { border-top: 1px solid var(--ui-border); border-bottom: 0; }
+    .modal-body { padding: 16px; }
+    .modal-title { margin: 0; font-size: 16px; font-weight: 700; }
+    .icon-btn {
+      border: none;
+      background: transparent;
+      padding: 6px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+    }
+    .icon-btn:hover { background: rgba(0,0,0,0.06); }
+    .checkbox {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      user-select: none;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -157,13 +205,14 @@
       </div>
 
       <div class="row">
-        <input id="xmm" type="number" step="1" inputmode="decimal" placeholder="X" aria-label="X coordinate (mm)" />
+        <input id="xmm" type="number" step="1" inputmode="decimal" placeholder="X →" aria-label="X coordinate (mm)" />
       </div>
       <div class="row">
-        <input id="ymm" type="number" step="1" inputmode="decimal" placeholder="Y" aria-label="Y coordinate (mm)" />
+        <input id="ymm" type="number" step="1" inputmode="decimal" placeholder="Y ↓" aria-label="Y coordinate (mm)" />
       </div>
 
-      <button id="clearBtn" type="button" title="Reset to default (no model, empty inputs)">Reset</button>
+      <!-- Settings (replaces old Reset) -->
+      <button id="settingsBtn" type="button" title="Settings">⚙️</button>
     </div>
 
     <main class="stage">
@@ -171,11 +220,43 @@
     </main>
   </div>
 
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal-backdrop" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div class="modal-header">
+        <h2 id="settingsTitle" class="modal-title">Settings</h2>
+        <button id="settingsClose" class="icon-btn" title="Close" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <label class="checkbox" for="crosshairToggle">
+            <input id="crosshairToggle" type="checkbox" />
+            Show Crosshair
+          </label>
+
+          <label class="checkbox" for="lockXToggle" title="Prevent touch/drag from changing X. You can still type a new X value above.">
+            <input id="lockXToggle" type="checkbox" />
+            Lock X →
+          </label>
+
+          <label class="checkbox" for="lockYToggle" title="Prevent touch/drag from changing Y. You can still type a new Y value above.">
+            <input id="lockYToggle" type="checkbox" />
+            Lock Y ↓
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <!-- Reset button inside modal (same behavior as before) -->
+        <button id="clearBtn" type="button" title="Reset to default (no model, empty inputs)">Reset</button>
+      </div>
+    </div>
+  </div>
+
 <script>
   (function () {
     // Defaults when no model is selected
-    const DEFAULT_MM_W = 2100;
-    const DEFAULT_MM_H = 3700;
+    const DEFAULT_MM_W = 1000
+    const DEFAULT_MM_H = 2000
 
     const MAJOR_MM = 100;
     const MINOR_MM = 50;
@@ -183,6 +264,10 @@
 
     const MINOR_MM_THICK = 0.25;
     const MAJOR_MM_THICK = 0.5;
+
+    // Crosshair thickness
+    const CROSSHAIR_LW_MAIN = 1.5; // px in main view
+    const CROSSHAIR_LW_LENS = 1; // px inside magnifier (thinner)
 
     // Labeling config
     const LABEL_MIN_SPACING_PX = 48;
@@ -219,7 +304,7 @@
     };
 
     const DEFAULT_MODEL_CONFIG = {
-      label: 'None',
+      label: 'P30',
       mmW: DEFAULT_MM_W,
       mmH: DEFAULT_MM_H,
       extraTop: 0,
@@ -232,11 +317,24 @@
     const modelSelect = document.getElementById('modelSelect');
     const xInput = document.getElementById('xmm');
     const yInput = document.getElementById('ymm');
+
+    // Settings modal elements
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsModal = document.getElementById('settingsModal');
+    const settingsClose = document.getElementById('settingsClose');
+    const crosshairToggle = document.getElementById('crosshairToggle');
+    const lockXToggle = document.getElementById('lockXToggle');
+    const lockYToggle = document.getElementById('lockYToggle');
+
+    // Reset button now lives in the modal
     const clearBtn = document.getElementById('clearBtn');
     const stage = document.querySelector('.stage');
 
     const STORAGE_KEY_XY = 'grid-plotter-xy';
     const STORAGE_KEY_MODEL = 'grid-plotter-model';
+    const STORAGE_KEY_CROSSHAIR = 'grid-plotter-crosshair';
+    const STORAGE_KEY_LOCKX = 'grid-plotter-lock-x';
+    const STORAGE_KEY_LOCKY = 'grid-plotter-lock-y';
 
     const DEFAULT_X = 0;
     const DEFAULT_Y = 0;
@@ -341,12 +439,13 @@
       return { minor: minorCss, major: majorCss };
     }
 
-    function crispCoord(v, lineWidthCss) {
-      const lwDev = lineWidthCss * dpr;
+    // Enhanced to consider current transform scale (e.g., lens zoom)
+    function crispCoord(v, lineWidthCss, transformScale = 1) {
+      const lwDev = lineWidthCss * dpr * transformScale;
       const isInt = Math.abs(lwDev - Math.round(lwDev)) < 1e-6;
       const isOddDevicePx = isInt && (Math.round(lwDev) % 2 === 1);
       const centerOffsetDev = isOddDevicePx ? 0.5 : 0;
-      return (Math.round(v * dpr) + centerOffsetDev) / dpr;
+      return (Math.round(v * dpr * transformScale) + centerOffsetDev) / (dpr * transformScale);
     }
 
     function alignToDevicePixel(v) {
@@ -370,16 +469,22 @@
       const gridW = mmW * mm2px;
       const gridH = (mmH + extraTop) * mm2px;
 
-      drawGrid({ mmW, mmH, scale: mm2px, gridW, gridH, gridLeft, gridTop, minorLW: minor, majorLW: major, extraTop });
+      // Pass lensZoom: 1 for the main view
+      drawGrid({ mmW, mmH, scale: mm2px, gridW, gridH, gridLeft, gridTop, minorLW: minor, majorLW: major, extraTop, lensZoom: 1 });
       drawSvgOverlay({ mmW, mmH, scale: mm2px, gridLeft, gridTop, extraTop });
+
+      // Crosshair (if enabled)
+      drawCrosshair({ mmW, mmH, scale: mm2px, gridLeft, gridTop, gridW, gridH, extraTop, lensZoom: 1 });
 
       // Axis labels
       drawAxisLabelsPinned({ mmW, mmH, scale: mm2px, gridLeft, gridTop, extraTop, width, height });
 
+      // Dot
       drawDot({ scale: mm2px, gridLeft, gridTop, extraTop, width, height, suppressLens: false, insideLens: false, lensZoom: 1 });
     }
 
-    function drawGrid({ mmW, mmH, scale, gridW, gridH, gridLeft, gridTop, minorLW, majorLW, extraTop }) {
+    // UPDATED: stroke-aware, symmetric clip; lens-aware crisping
+    function drawGrid({ mmW, mmH, scale, gridW, gridH, gridLeft, gridTop, minorLW, majorLW, extraTop, lensZoom = 1 }) {
       const minorColor = getComputedStyle(document.documentElement).getPropertyValue('--minor').trim() || '#d9d9d9';
       const majorColor = getComputedStyle(document.documentElement).getPropertyValue('--major').trim() || '#7a7a7a';
 
@@ -387,9 +492,10 @@
       const yMax = mmH;
 
       ctx.save();
-      const clipPadding = 1 / dpr;
+      // Half the thickest stroke + a tiny epsilon (pre-transform units)
+      const pad = Math.max(minorLW, majorLW) / 2 + 1 / (dpr * lensZoom);
       ctx.beginPath();
-      ctx.rect(gridLeft, gridTop, gridW + clipPadding, gridH);
+      ctx.rect(gridLeft - pad, gridTop - pad, gridW + 2 * pad, gridH + 2 * pad);
       ctx.clip();
 
       // Minor lines
@@ -398,7 +504,7 @@
 
       for (let xm = MINOR_MM; xm < mmW; xm += MINOR_MM) {
         if (xm % MAJOR_MM === 0) continue;
-        const x = crispCoord(gridLeft + xm * scale, ctx.lineWidth);
+        const x = crispCoord(gridLeft + xm * scale, ctx.lineWidth, lensZoom);
         ctx.beginPath();
         ctx.moveTo(x, gridTop);
         ctx.lineTo(x, gridTop + gridH);
@@ -406,7 +512,7 @@
       }
       for (let ym = Math.ceil(yMin / MINOR_MM) * MINOR_MM; ym < yMax; ym += MINOR_MM) {
         if (ym % MAJOR_MM === 0) continue;
-        const y = crispCoord(gridTop + (ym + extraTop) * scale, ctx.lineWidth);
+        const y = crispCoord(gridTop + (ym + extraTop) * scale, ctx.lineWidth, lensZoom);
         ctx.beginPath();
         ctx.moveTo(gridLeft, y);
         ctx.lineTo(gridLeft + gridW, y);
@@ -418,14 +524,14 @@
       ctx.lineWidth = majorLW;
 
       for (let xm = 0; xm <= mmW; xm += MAJOR_MM) {
-        const x = crispCoord(gridLeft + xm * scale, ctx.lineWidth);
+        const x = crispCoord(gridLeft + xm * scale, ctx.lineWidth, lensZoom);
         ctx.beginPath();
         ctx.moveTo(x, gridTop);
         ctx.lineTo(x, gridTop + gridH);
         ctx.stroke();
       }
       for (let ym = Math.ceil(yMin / MAJOR_MM) * MAJOR_MM; ym <= yMax; ym += MAJOR_MM) {
-        const y = crispCoord(gridTop + (ym + extraTop) * scale, ctx.lineWidth);
+        const y = crispCoord(gridTop + (ym + extraTop) * scale, ctx.lineWidth, lensZoom);
         ctx.beginPath();
         ctx.moveTo(gridLeft, y);
         ctx.lineTo(gridLeft + gridW, y);
@@ -606,6 +712,53 @@
       }
     }
 
+    // UPDATED: stroke-aware, symmetric clip; lens-aware crisping
+    function drawCrosshair({ mmW, mmH, scale, gridLeft, gridTop, gridW, gridH, extraTop, lensZoom = 1 }) {
+      if (!isCrosshairEnabled()) return;
+
+      const xParsed = parseFloat(xInput.value);
+      const yParsed = parseFloat(yInput.value);
+      const xmm = Number.isFinite(xParsed) ? xParsed : DEFAULT_X;
+      const ymm = Number.isFinite(yParsed) ? yParsed : DEFAULT_Y;
+
+      const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#e53935';
+
+      const px = gridLeft + xmm * scale;
+      const py = gridTop + (extraTop + ymm) * scale;
+
+      // Keep apparent thickness constant in the lens
+      const desiredCss = (lensZoom === 1) ? CROSSHAIR_LW_MAIN : CROSSHAIR_LW_LENS;
+      const effectiveLineWidth = desiredCss / lensZoom;
+
+      ctx.save();
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = effectiveLineWidth;
+
+      // Half the stroke + epsilon (pre-transform units)
+      const pad = ctx.lineWidth / 2 + 1 / (dpr * lensZoom);
+      ctx.beginPath();
+      ctx.rect(gridLeft - pad, gridTop - pad, gridW + 2 * pad, gridH + 2 * pad);
+      ctx.clip();
+
+      // Pixel-crisp alignment
+      const cx = crispCoord(px, ctx.lineWidth, lensZoom);
+      const cy = crispCoord(py, ctx.lineWidth, lensZoom);
+
+      // Horizontal line
+      ctx.beginPath();
+      ctx.moveTo(gridLeft, cy);
+      ctx.lineTo(gridLeft + gridW, cy);
+      ctx.stroke();
+
+      // Vertical line
+      ctx.beginPath();
+      ctx.moveTo(cx, gridTop);
+      ctx.lineTo(cx, gridTop + gridH);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
     function drawMagnifier({ centerX, centerY, width, height, xmm, ymm, accent, labelHalo, labelColor, cssScale }) {
       const { lx, ly } = computeLensPlacement(centerX, centerY, width, height);
 
@@ -623,7 +776,7 @@
       ctx.fillStyle = '#fff';
       ctx.fillRect(lx - R - 2, ly - R - 2, (R + 2) * 2, (R + 2) * 2);
 
-      // Re-render content in the lens: grid + overlay + smaller dot
+      // Re-render content in the lens: grid + overlay + thinner crosshair + smaller dot
       ctx.save();
       ctx.translate(lx, ly);
       ctx.scale(zoom, zoom);
@@ -638,11 +791,14 @@
       const gridW = mmW * mm2px;
       const gridH = (mmH + extraTop) * mm2px;
 
-      // Draw the zoomed-in grid inside the lens
-      drawGrid({ mmW, mmH, scale: mm2px, gridW, gridH, gridLeft, gridTop, minorLW: minor, majorLW: major, extraTop });
+      // Draw the zoomed-in grid inside the lens (lens-aware)
+      drawGrid({ mmW, mmH, scale: mm2px, gridW, gridH, gridLeft, gridTop, minorLW: minor, majorLW: major, extraTop, lensZoom: zoom });
 
       // SVG overlay
       drawSvgOverlay({ mmW, mmH, scale: mm2px, gridLeft, gridTop, extraTop });
+
+      // Crosshair inside lens (thinner)
+      drawCrosshair({ mmW, mmH, scale: mm2px, gridLeft, gridTop, gridW, gridH, extraTop, lensZoom: zoom });
 
       // Draw the dot again inside the lens (smaller), suppress lens recursion
       drawDot({
@@ -823,6 +979,55 @@
       }
     }
 
+    function saveCrosshairSetting() {
+      try {
+        localStorage.setItem(STORAGE_KEY_CROSSHAIR, crosshairToggle.checked ? '1' : '0');
+      } catch (e) {}
+    }
+function restoreCrosshairSetting() {
+  try {
+    const v = localStorage.getItem(STORAGE_KEY_CROSSHAIR);
+    if (v === null) {
+      // First load: default ON, and persist that default
+      crosshairToggle.checked = true;
+      saveCrosshairSetting();
+    } else {
+      crosshairToggle.checked = (v === '1');
+    }
+  } catch (e) {
+    // If storage is unavailable, default to ON
+    crosshairToggle.checked = true;
+  }
+}
+    function isCrosshairEnabled() {
+      return !!(crosshairToggle && crosshairToggle.checked);
+    }
+
+    function saveLockSettings() {
+      try {
+        localStorage.setItem(STORAGE_KEY_LOCKX, lockXToggle.checked ? '1' : '0');
+        localStorage.setItem(STORAGE_KEY_LOCKY, lockYToggle.checked ? '1' : '0');
+      } catch (e) {}
+    }
+    function restoreLockSettings() {
+      try {
+        const lx = localStorage.getItem(STORAGE_KEY_LOCKX);
+        const ly = localStorage.getItem(STORAGE_KEY_LOCKY);
+        if (lx === '1') lockXToggle.checked = true;
+        if (ly === '1') lockYToggle.checked = true;
+      } catch (e) {}
+      applyLockUI();
+    }
+    function isLockXEnabled() { return !!(lockXToggle && lockXToggle.checked); }
+    function isLockYEnabled() { return !!(lockYToggle && lockYToggle.checked); }
+    function applyLockUI() {
+      const lockX = isLockXEnabled();
+      const lockY = isLockYEnabled();
+      // Inputs remain editable as requested; just update titles for clarity
+      xInput.title = lockX ? 'X locked from touch/drag; input still editable' : '';
+      yInput.title = lockY ? 'Y locked from touch/drag; input still editable' : '';
+    }
+
     function setModel(key) {
       selectedModel = (key && MODELS[key]) ? key : DEFAULT_MODEL;
 
@@ -973,8 +1178,10 @@
       xmm = Math.round(clamp(xmm, 0, geom.mmW));
       ymm = Math.round(clamp(ymm, 0, geom.mmH));
 
-      xInput.value = String(xmm);
-      yInput.value = String(ymm);
+      // Apply locking: prevent canvas/touch from changing locked axes
+      if (!isLockXEnabled()) xInput.value = String(xmm);
+      if (!isLockYEnabled()) yInput.value = String(ymm);
+
       saveXY();
       draw();
     }
@@ -1133,10 +1340,24 @@
       draw();
     }
 
+    // Settings modal helpers
+    function openSettings() {
+      settingsModal.hidden = false;
+      // Optional: focus the first interactive element
+      setTimeout(() => {
+        try { crosshairToggle.focus(); } catch (e) {}
+      }, 0);
+    }
+    function closeSettings() {
+      settingsModal.hidden = true;
+    }
+
     // Init
     restoreXY();
     resizeCanvas();
     restoreModel();
+    restoreCrosshairSetting();
+    restoreLockSettings();
 
     window.addEventListener('resize', scheduleResize);
     window.addEventListener('orientationchange', scheduleResize);
@@ -1151,6 +1372,7 @@
       visualViewport.addEventListener('scroll', scheduleResize, { passive: true });
     }
 
+    // Inputs remain editable even when locked
     xInput.addEventListener('input', () => { saveXY(); draw(); });
     yInput.addEventListener('input', () => { saveXY(); draw(); });
     [xInput, yInput].forEach(el =>
@@ -1164,13 +1386,19 @@
 
     [xInput, yInput].forEach(enableSelectAllOnFocus);
 
-    // Reset button: clear inputs and reset zoom/pan
-    clearBtn.addEventListener('click', () => {
-      xInput.value = '';
-      yInput.value = '';
-      saveXY();
-      resetView();
-    });
+    // Reset button: clear inputs and reset zoom/pan (same as before)
+clearBtn.addEventListener('click', () => {
+  // Clear XY
+  xInput.value = '';
+  yInput.value = '';
+  saveXY();
+
+
+
+  // Reset view and close
+  resetView();
+  closeSettings();
+});
 
     // Desktop zoom + reset
     canvas.addEventListener('wheel', wheelZoomHandler, { passive: false });
@@ -1199,8 +1427,35 @@
     document.addEventListener('mousedown', blurIfOutsideInputs, { capture: true, passive: true });
     document.addEventListener('touchstart', blurIfOutsideInputs, { capture: true, passive: true });
 
+    // Settings modal interactions
+    settingsBtn.addEventListener('click', openSettings);
+    settingsClose.addEventListener('click', closeSettings);
+    settingsModal.addEventListener('click', (e) => {
+      if (e.target === settingsModal) closeSettings(); // click backdrop to close
+    });
+
+    crosshairToggle.addEventListener('change', () => {
+      saveCrosshairSetting();
+      draw();
+    });
+
+    lockXToggle.addEventListener('change', () => {
+      applyLockUI();
+      saveLockSettings();
+    });
+    lockYToggle.addEventListener('change', () => {
+      applyLockUI();
+      saveLockSettings();
+    });
+
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
+        // If modal is open, close it
+        if (!settingsModal.hidden) {
+          closeSettings();
+          return;
+        }
+        // Otherwise, blur active input if any
         const ae = document.activeElement;
         if (ae && (ae.matches('input, select, textarea, [contenteditable]'))) {
           ae.blur();

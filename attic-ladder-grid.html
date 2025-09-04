@@ -452,36 +452,40 @@
       return Math.round(v * dpr) / dpr;
     }
 
-    function draw() {
-      const { width, height, scale: baseScale, gridLeft: baseLeft, gridTop: baseTop, extraTop, mmW, mmH } = computeLayout();
+function draw() {
+  const { width, height, scale: baseScale, gridLeft: baseLeft, gridTop: baseTop, extraTop, mmW, mmH } = computeLayout();
 
-      const mm2px = baseScale * view.scale;
+  const mm2px = baseScale * view.scale;
 
-      ctx.clearRect(0, 0, width, height);
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(0, 0, width, height);
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, width, height);
 
-      const gridLeft = baseLeft + view.x;
-      const gridTop = baseTop + view.y;
+  const gridLeft = baseLeft + view.x;
+  const gridTop = baseTop + view.y;
 
-      const { minor, major } = lineWidths(mm2px);
+  const { minor, major } = lineWidths(mm2px);
 
-      const gridW = mmW * mm2px;
-      const gridH = (mmH + extraTop) * mm2px;
+  const gridW = mmW * mm2px;
+  const gridH = (mmH + extraTop) * mm2px;
 
-      // Pass lensZoom: 1 for the main view
-      drawGrid({ mmW, mmH, scale: mm2px, gridW, gridH, gridLeft, gridTop, minorLW: minor, majorLW: major, extraTop, lensZoom: 1 });
-      drawSvgOverlay({ mmW, mmH, scale: mm2px, gridLeft, gridTop, extraTop });
+  // Pass lensZoom: 1 for the main view
+  drawGrid({ mmW, mmH, scale: mm2px, gridW, gridH, gridLeft, gridTop, minorLW: minor, majorLW: major, extraTop, lensZoom: 1 });
+  drawSvgOverlay({ mmW, mmH, scale: mm2px, gridLeft, gridTop, extraTop });
 
-      // Crosshair (if enabled)
-      drawCrosshair({ mmW, mmH, scale: mm2px, gridLeft, gridTop, gridW, gridH, extraTop, lensZoom: 1 });
+  // Crosshair (if enabled) — now passes viewScale
+  drawCrosshair({
+    mmW, mmH, scale: mm2px, gridLeft, gridTop, gridW, gridH, extraTop,
+    lensZoom: 1,
+    viewScale: view.scale
+  });
 
-      // Axis labels
-      drawAxisLabelsPinned({ mmW, mmH, scale: mm2px, gridLeft, gridTop, extraTop, width, height });
+  // Axis labels
+  drawAxisLabelsPinned({ mmW, mmH, scale: mm2px, gridLeft, gridTop, extraTop, width, height });
 
-      // Dot
-      drawDot({ scale: mm2px, gridLeft, gridTop, extraTop, width, height, suppressLens: false, insideLens: false, lensZoom: 1 });
-    }
+  // Dot
+  drawDot({ scale: mm2px, gridLeft, gridTop, extraTop, width, height, suppressLens: false, insideLens: false, lensZoom: 1 });
+}
 
     // UPDATED: stroke-aware, symmetric clip; lens-aware crisping
     function drawGrid({ mmW, mmH, scale, gridW, gridH, gridLeft, gridTop, minorLW, majorLW, extraTop, lensZoom = 1 }) {
@@ -713,139 +717,153 @@
     }
 
     // UPDATED: stroke-aware, symmetric clip; lens-aware crisping
-    function drawCrosshair({ mmW, mmH, scale, gridLeft, gridTop, gridW, gridH, extraTop, lensZoom = 1 }) {
-      if (!isCrosshairEnabled()) return;
+    function drawCrosshair({
+  mmW, mmH, scale, gridLeft, gridTop, gridW, gridH, extraTop,
+  lensZoom = 1,
+  viewScale = 1
+}) {
+  if (!isCrosshairEnabled()) return;
 
-      const xParsed = parseFloat(xInput.value);
-      const yParsed = parseFloat(yInput.value);
-      const xmm = Number.isFinite(xParsed) ? xParsed : DEFAULT_X;
-      const ymm = Number.isFinite(yParsed) ? yParsed : DEFAULT_Y;
+  const xParsed = parseFloat(xInput.value);
+  const yParsed = parseFloat(yInput.value);
+  const xmm = Number.isFinite(xParsed) ? xParsed : DEFAULT_X;
+  const ymm = Number.isFinite(yParsed) ? yParsed : DEFAULT_Y;
 
-      const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#e53935';
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#e53935';
 
-      const px = gridLeft + xmm * scale;
-      const py = gridTop + (extraTop + ymm) * scale;
+  const px = gridLeft + xmm * scale;
+  const py = gridTop + (extraTop + ymm) * scale;
 
-      // Keep apparent thickness constant in the lens
-      const desiredCss = (lensZoom === 1) ? CROSSHAIR_LW_MAIN : CROSSHAIR_LW_LENS;
-      const effectiveLineWidth = desiredCss / lensZoom;
+  // Slight growth in main view as you zoom in; lens stays constant
+  const baseCss = (lensZoom === 1) ? CROSSHAIR_LW_MAIN : CROSSHAIR_LW_LENS;
+const growth = (lensZoom === 1)
+  ? (1 + (viewScale - 1) * 0.15) // smaller multiplier = subtler thickening
+  : 1;
+const maxCss = 2; // lower cap
+  const lwCss = Math.min(baseCss * growth, maxCss);
 
-      ctx.save();
-      ctx.strokeStyle = accent;
-      ctx.lineWidth = effectiveLineWidth;
+  const effectiveLineWidth = lwCss / lensZoom;
 
-      // Half the stroke + epsilon (pre-transform units)
-      const pad = ctx.lineWidth / 2 + 1 / (dpr * lensZoom);
-      ctx.beginPath();
-      ctx.rect(gridLeft - pad, gridTop - pad, gridW + 2 * pad, gridH + 2 * pad);
-      ctx.clip();
+  ctx.save();
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = effectiveLineWidth;
 
-      // Pixel-crisp alignment
-      const cx = crispCoord(px, ctx.lineWidth, lensZoom);
-      const cy = crispCoord(py, ctx.lineWidth, lensZoom);
+  // Half the stroke + epsilon (pre-transform units)
+  const pad = ctx.lineWidth / 2 + 1 / (dpr * lensZoom);
+  ctx.beginPath();
+  ctx.rect(gridLeft - pad, gridTop - pad, gridW + 2 * pad, gridH + 2 * pad);
+  ctx.clip();
 
-      // Horizontal line
-      ctx.beginPath();
-      ctx.moveTo(gridLeft, cy);
-      ctx.lineTo(gridLeft + gridW, cy);
-      ctx.stroke();
+  // Pixel-crisp alignment
+  const cx = crispCoord(px, ctx.lineWidth, lensZoom);
+  const cy = crispCoord(py, ctx.lineWidth, lensZoom);
 
-      // Vertical line
-      ctx.beginPath();
-      ctx.moveTo(cx, gridTop);
-      ctx.lineTo(cx, gridTop + gridH);
-      ctx.stroke();
+  // Horizontal line
+  ctx.beginPath();
+  ctx.moveTo(gridLeft, cy);
+  ctx.lineTo(gridLeft + gridW, cy);
+  ctx.stroke();
 
-      ctx.restore();
-    }
+  // Vertical line
+  ctx.beginPath();
+  ctx.moveTo(cx, gridTop);
+  ctx.lineTo(cx, gridTop + gridH);
+  ctx.stroke();
+
+  ctx.restore();
+}
 
     function drawMagnifier({ centerX, centerY, width, height, xmm, ymm, accent, labelHalo, labelColor, cssScale }) {
-      const { lx, ly } = computeLensPlacement(centerX, centerY, width, height);
+  const { lx, ly } = computeLensPlacement(centerX, centerY, width, height);
 
-      const R = LENS_RADIUS_PX * cssScale;
-      const border = LENS_BORDER_PX * cssScale;
-      const zoom = LENS_ZOOM;
+  const R = LENS_RADIUS_PX * cssScale;
+  const border = LENS_BORDER_PX * cssScale;
+  const zoom = LENS_ZOOM;
 
-      // Clip to circular lens
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(lx, ly, R, 0, Math.PI * 2);
-      ctx.clip();
+  // Clip to circular lens
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(lx, ly, R, 0, Math.PI * 2);
+  ctx.clip();
 
-      // Fill lens background white to hide the outside/base grid
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(lx - R - 2, ly - R - 2, (R + 2) * 2, (R + 2) * 2);
+  // Fill lens background white to hide the outside/base grid
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(lx - R - 2, ly - R - 2, (R + 2) * 2, (R + 2) * 2);
 
-      // Re-render content in the lens: grid + overlay + thinner crosshair + smaller dot
-      ctx.save();
-      ctx.translate(lx, ly);
-      ctx.scale(zoom, zoom);
-      ctx.translate(-centerX, -centerY);
+  // Re-render content in the lens: grid + overlay + thinner crosshair + smaller dot
+  ctx.save();
+  ctx.translate(lx, ly);
+  ctx.scale(zoom, zoom);
+  ctx.translate(-centerX, -centerY);
 
-      const { scale: baseScale, gridLeft: baseLeft, gridTop: baseTop, extraTop, mmW, mmH } = computeLayout();
-      const mm2px = baseScale * view.scale;
-      const gridLeft = baseLeft + view.x;
-      const gridTop = baseTop + view.y;
+  const { scale: baseScale, gridLeft: baseLeft, gridTop: baseTop, extraTop, mmW, mmH } = computeLayout();
+  const mm2px = baseScale * view.scale;
+  const gridLeft = baseLeft + view.x;
+  const gridTop = baseTop + view.y;
 
-      const { minor, major } = lineWidths(mm2px);
-      const gridW = mmW * mm2px;
-      const gridH = (mmH + extraTop) * mm2px;
+  const { minor, major } = lineWidths(mm2px);
+  const gridW = mmW * mm2px;
+  const gridH = (mmH + extraTop) * mm2px;
 
-      // Draw the zoomed-in grid inside the lens (lens-aware)
-      drawGrid({ mmW, mmH, scale: mm2px, gridW, gridH, gridLeft, gridTop, minorLW: minor, majorLW: major, extraTop, lensZoom: zoom });
+  // Draw the zoomed-in grid inside the lens (lens-aware)
+  drawGrid({ mmW, mmH, scale: mm2px, gridW, gridH, gridLeft, gridTop, minorLW: minor, majorLW: major, extraTop, lensZoom: zoom });
 
-      // SVG overlay
-      drawSvgOverlay({ mmW, mmH, scale: mm2px, gridLeft, gridTop, extraTop });
+  // SVG overlay
+  drawSvgOverlay({ mmW, mmH, scale: mm2px, gridLeft, gridTop, extraTop });
 
-      // Crosshair inside lens (thinner)
-      drawCrosshair({ mmW, mmH, scale: mm2px, gridLeft, gridTop, gridW, gridH, extraTop, lensZoom: zoom });
+  // Crosshair inside lens (thinner); viewScale passed too
+  drawCrosshair({
+    mmW, mmH, scale: mm2px, gridLeft, gridTop, gridW, gridH, extraTop,
+    lensZoom: zoom,
+    viewScale: view.scale
+  });
 
-      // Draw the dot again inside the lens (smaller), suppress lens recursion
-      drawDot({
-        scale: mm2px,
-        gridLeft,
-        gridTop,
-        extraTop,
-        width,
-        height,
-        suppressLens: true,
-        insideLens: true,
-        lensZoom: zoom
-      });
+  // Draw the dot again inside the lens (smaller), suppress lens recursion
+  drawDot({
+    scale: mm2px,
+    gridLeft,
+    gridTop,
+    extraTop,
+    width,
+    height,
+    suppressLens: true,
+    insideLens: true,
+    lensZoom: zoom
+  });
 
-      ctx.restore(); // end content inside lens
-      ctx.restore(); // end lens clip
+  ctx.restore(); // end content inside lens
+  ctx.restore(); // end lens clip
 
-      // Lens ring
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(lx, ly, R, 0, Math.PI * 2);
-      ctx.strokeStyle = labelHalo;
-      ctx.lineWidth = border * 2.5;
-      ctx.stroke();
+  // Lens ring
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(lx, ly, R, 0, Math.PI * 2);
+  ctx.strokeStyle = labelHalo;
+  ctx.lineWidth = border * 2.5;
+  ctx.stroke();
 
-      ctx.beginPath();
-      ctx.arc(lx, ly, R, 0, Math.PI * 2);
-      ctx.strokeStyle = '#222';
-      ctx.lineWidth = border;
-      ctx.stroke();
-      ctx.restore();
+  ctx.beginPath();
+  ctx.arc(lx, ly, R, 0, Math.PI * 2);
+  ctx.strokeStyle = '#222';
+  ctx.lineWidth = border;
+  ctx.stroke();
+  ctx.restore();
 
-      // Coordinates ABOVE the lens, formatted: X=..., Y=...
-      const text = `X=${xmm}, Y=${ymm}`;
-      ctx.save();
-      ctx.font = `600 ${Math.round(12 * cssScale)}px system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Helvetica, Arial`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'bottom';
-      const ty = ly - R - 8 * cssScale;
-      const haloWidth = 3 * cssScale;
-      ctx.lineWidth = haloWidth;
-      ctx.strokeStyle = labelHalo;
-      ctx.strokeText(text, lx, ty);
-      ctx.fillStyle = labelColor;
-      ctx.fillText(text, lx, ty);
-      ctx.restore();
-    }
+  // Coordinates ABOVE the lens, formatted: X=..., Y=...
+  const text = `X=${xmm}, Y=${ymm}`;
+  ctx.save();
+  ctx.font = `600 ${Math.round(12 * cssScale)}px system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Helvetica, Arial`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  const ty = ly - R - 8 * cssScale;
+  const haloWidth = 3 * cssScale;
+  ctx.lineWidth = haloWidth;
+  ctx.strokeStyle = labelHalo;
+  ctx.strokeText(text, lx, ty);
+  ctx.fillStyle = labelColor;
+  ctx.fillText(text, lx, ty);
+  ctx.restore();
+}
 
     function computeLensPlacement(cx, cy, width, height) {
       const o = LENS_OFFSET_PX;
