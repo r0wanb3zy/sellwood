@@ -984,13 +984,21 @@
         localStorage.setItem(STORAGE_KEY_CROSSHAIR, crosshairToggle.checked ? '1' : '0');
       } catch (e) {}
     }
-    function restoreCrosshairSetting() {
-      try {
-        const v = localStorage.getItem(STORAGE_KEY_CROSSHAIR);
-        if (v === '1') crosshairToggle.checked = true;
-        else if (v === '0') crosshairToggle.checked = false;
-      } catch (e) {}
+function restoreCrosshairSetting() {
+  try {
+    const v = localStorage.getItem(STORAGE_KEY_CROSSHAIR);
+    if (v === null) {
+      // First load: default ON, and persist that default
+      crosshairToggle.checked = true;
+      saveCrosshairSetting();
+    } else {
+      crosshairToggle.checked = (v === '1');
     }
+  } catch (e) {
+    // If storage is unavailable, default to ON
+    crosshairToggle.checked = true;
+  }
+}
     function isCrosshairEnabled() {
       return !!(crosshairToggle && crosshairToggle.checked);
     }
@@ -1346,10 +1354,10 @@
 
     // Init
     restoreXY();
-    resizeCanvas();
-    restoreModel();
     restoreCrosshairSetting();
     restoreLockSettings();
+    resizeCanvas();
+    restoreModel();
 
     window.addEventListener('resize', scheduleResize);
     window.addEventListener('orientationchange', scheduleResize);
