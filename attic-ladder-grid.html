@@ -1354,10 +1354,10 @@ function restoreCrosshairSetting() {
 
     // Init
     restoreXY();
-    restoreCrosshairSetting();
-    restoreLockSettings();
     resizeCanvas();
     restoreModel();
+    restoreCrosshairSetting();
+    restoreLockSettings();
 
     window.addEventListener('resize', scheduleResize);
     window.addEventListener('orientationchange', scheduleResize);
