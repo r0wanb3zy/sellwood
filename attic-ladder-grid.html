@@ -739,7 +739,8 @@ function draw() {
 const growth = (lensZoom === 1)
   ? (1 + (viewScale - 1) * 0.15) // smaller multiplier = subtler thickening
   : 1;
-const maxCss = 2; // lower cap
+const maxCss = 2.5
+; // lower cap
   const lwCss = Math.min(baseCss * growth, maxCss);
 
   const effectiveLineWidth = lwCss / lensZoom;
